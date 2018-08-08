@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\ProxyFunctions">
+      <UniqueIdentifier>{50fce867-34ad-4e25-8c58-39eff42d1db8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\KxFramework">
+      <UniqueIdentifier>{b4ee738c-289c-4fda-90ab-3731e8e1921c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\KxFramework">
+      <UniqueIdentifier>{008b1c5f-518e-4d81-98ff-4d829359914d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\DLLMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="Source\KxFileFinder.cpp">
+      <Filter>Source Files\KxFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\KxDynamicString.cpp">
+      <Filter>Source Files\KxFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\xSEPluginPreloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\xSEPluginPreloaderFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Source\ScriptExtenderDefinesBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DInput8.h">
+      <Filter>Header Files\ProxyFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\bink2w64.h">
+      <Filter>Header Files\ProxyFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\KxDynamicString.h">
+      <Filter>Header Files\KxFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\KxFileFinder.h">
+      <Filter>Header Files\KxFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\X3DAudio17.h">
+      <Filter>Header Files\ProxyFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\xSEPluginPreloader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Source\KxDynamicString.natvis">
+      <Filter>Resource Files</Filter>
+    </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="Source\UnconditionalJump.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
+  </ItemGroup>
+</Project>
