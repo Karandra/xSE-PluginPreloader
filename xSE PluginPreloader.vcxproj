@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{A22C6928-B2E4-439A-942E-CF95A6F0CFB1}</ProjectGuid>
+    <ProjectGuid>{D8462034-E42F-47A3-863E-E6BC7252C178}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>GenericDLLPreloader</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
@@ -117,10 +117,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"</Command>
+copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+copy "$(ProjectDir)Build\$(SolutionName).ini" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).ini"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
@@ -143,10 +145,12 @@ copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"</Command>
+copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+copy "$(ProjectDir)Build\$(SolutionName).ini" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).ini"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
@@ -169,10 +173,12 @@ copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"</Command>
+copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+copy "$(ProjectDir)Build\$(SolutionName).ini" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).ini"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
@@ -195,15 +201,19 @@ copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"</Command>
+copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+copy "$(ProjectDir)Build\$(SolutionName).ini" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).ini"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Source\bink2w64.h" />
     <ClInclude Include="Source\DInput8.h" />
+    <ClInclude Include="Source\SimpleINI.h" />
     <ClInclude Include="Source\X3DAudio17.h" />
     <ClInclude Include="Source\xSEPluginPreloader.h" />
     <ClInclude Include="Source\KxDynamicString.h" />
@@ -233,6 +243,9 @@ copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">true</ExcludedFromBuild>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="xSE PluginPreloader.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

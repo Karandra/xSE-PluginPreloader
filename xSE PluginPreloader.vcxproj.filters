@@ -64,6 +64,12 @@
     <ClInclude Include="Source\xSEPluginPreloader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SimpleINI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Source\KxDynamicString.natvis">
@@ -74,5 +80,10 @@
     <MASM Include="Source\UnconditionalJump.asm">
       <Filter>Source Files</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="xSE PluginPreloader.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
