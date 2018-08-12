@@ -14,8 +14,16 @@ class xSEPP
 			LoadFailed,
 			InitializationFailed,
 		};
+		enum class LoadMethod
+		{
+			Direct,
+			Delayed,
+		};
+
 		using InitPluginFunc = void(__cdecl*)(void);
+		
 		using InitTermFunc = void(__cdecl*)(void*, void*);
+		using tmainCRTStartupFunc = int64_t(__cdecl*)(void);
 
 	private:
 		static xSEPP* ms_Instnace;
@@ -37,15 +45,19 @@ class xSEPP
 			return 256;
 		}
 		static void** GetFunctions();
-		static void DelayedLoad(void* p1, void* p2);
-
+		
 	private:
 		std::vector<HMODULE> m_LoadedLibraries;
 		HMODULE m_OriginalLibrary = NULL;
+		
+		bool m_PluginsLoaded = false;
 		InitTermFunc m_initterm_e = NULL;
+		tmainCRTStartupFunc m_start = NULL;
 
 		CSimpleIniW m_Config;
 		KxDynamicString m_OriginalLibraryPath;
+		LoadMethod m_LoadMethod = LoadMethod::Delayed;
+
 		const wchar_t* m_PluginsFolder = NULL;
 		FILE* m_Log = NULL;
 
@@ -61,11 +73,27 @@ class xSEPP
 		void LoadPlugins();
 		void UnloadPlugins();
 		void LogLoadStatus(const wchar_t* path, LoadStatus status) const;
-		void CallInitTerm(void* p1, void* p2)
+		
+		void DetourInitFunctions();
+		static void DelayedLoad_InitTrem(void* p1, void* p2)
+		{
+			GetInstance().RunLoadPlugins();
+			GetInstance().Call_InitTerm(p1, p2);
+		}
+		static int64_t DelayedLoad_start()
+		{
+			GetInstance().RunLoadPlugins();
+			return GetInstance().Call_start();
+		}
+		void Call_InitTerm(void* p1, void* p2) const
 		{
 			(*m_initterm_e)(p1, p2);
 		}
-
+		int64_t Call_start() const
+		{
+			return (*m_start)();
+		}
+		
 		void LoadOriginalLibrary();
 		void LoadOriginalLibraryFunctions();
 		void UnloadOriginalLibrary();
@@ -76,10 +104,18 @@ class xSEPP
 			uint8_t* base = reinterpret_cast<uint8_t*>(GetModuleHandleW(NULL));
 			return reinterpret_cast<T>(NukemDetours::DetourIAT(base, reinterpret_cast<uint8_t*>(func), nameDLL, nameFunc));
 		}
-		template<class T> T DetourFunction(T func, uintptr_t offset) const
+		
+		template<class T> T DetourFunctionBase(HMODULE base, T func, uintptr_t offset) const
 		{
-			uint8_t* base = reinterpret_cast<uint8_t*>(GetModuleHandleW(NULL));
-			return reinterpret_cast<T>(NukemDetours::DetourFunction(base + offset, reinterpret_cast<uint8_t*>(func)));
+			return reinterpret_cast<T>(NukemDetours::DetourFunction(reinterpret_cast<uint8_t*>(base) + offset, reinterpret_cast<uint8_t*>(func)));
+		}
+		template<class T> T DetourFunctionThis(T func, uintptr_t offset) const
+		{
+			return DetourFunctionBase(GetModuleHandleW(NULL), func, offset);
+		}
+		template<class T> T DetourFunctionCRT(T func, uintptr_t offset) const
+		{
+			return DetourFunctionBase(GetModuleHandleW(L"MSVCR110.dll"), func, offset);
 		}
 
 	public:
@@ -90,6 +126,16 @@ class xSEPP
 		bool IsOK() const
 		{
 			return m_OriginalLibrary != NULL;
+		}
+		void RunLoadPlugins();
+
+		bool ShouldUseDirectLoad() const
+		{
+			return m_LoadMethod == LoadMethod::Direct;
+		}
+		bool ShouldUseDelayedLoad() const
+		{
+			return m_LoadMethod == LoadMethod::Delayed;
 		}
 
 		template<class ...Args> void Log(const wchar_t* format, Args... args) const

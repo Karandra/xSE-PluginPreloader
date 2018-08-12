@@ -7,11 +7,13 @@
 #if _WIN64
 
 namespace NukemDetours = Detours::X64;
+using NukemDetoursOpt = Detours::X64Option;
 #pragma comment(lib, "Nukem Detours/detours x64.lib")
 
 #else
 
 namespace NukemDetours = Detours::X86;
+using NukemDetoursOpt = Detours::X86Option;
 #pragma comment(lib, "Nukem Detours/detours x86.lib")
 
 #endif
@@ -30,13 +32,6 @@ void xSEPP::DestroyInstnace()
 {
 	delete ms_Instnace;
 	ms_Instnace = NULL;
-}
-
-void xSEPP::DelayedLoad(void* p1, void* p2)
-{
-	xSEPP::GetInstance().Log(L"Loading plugins");
-	xSEPP::GetInstance().LoadPlugins();
-	xSEPP::GetInstance().CallInitTerm(p1, p2);
 }
 
 const wchar_t* xSEPP::GetConfigOption(const wchar_t* section, const wchar_t* key, const wchar_t* defaultValue) const
@@ -144,6 +139,37 @@ void xSEPP::LogLoadStatus(const wchar_t* path, LoadStatus status) const
 	};
 }
 
+void xSEPP::DetourInitFunctions()
+{
+	Log(L"Overriding '_initterm_e' function for delayed load");
+	void* func = NULL;
+
+	#if xSE_PLATFORM_F4SE
+
+	//m_initterm_e = DetourFunctionIAT(DelayedLoad_InitTrem, "MSVCR110.dll", "_initterm_e");
+	//func = m_initterm_e;
+
+	// 0x14295BFD0 is address of 'start' function in Fallout4.exe v1.10.106
+	m_start = DetourFunctionThis(DelayedLoad_start, 0x14295BFD0u);
+	func = m_start;
+
+	#elif xSE_PLATFORM_NVSE
+
+	// 0x00ECCCF0 is address of '_initterm_e' in 'FalloutNV.exe'
+	m_initterm_e = DetourFunctionThis(DelayedLoad_InitTrem, 0x00ECCCF0u);
+	func = m_initterm_e;
+
+	#endif
+
+	if (func == NULL)
+	{
+		UnloadOriginalLibrary();
+		m_OriginalLibrary = NULL;
+
+		Log(L"Can't override function, terminating");
+	}
+}
+
 void xSEPP::LoadOriginalLibrary()
 {
 	KxDynamicString path = GetOriginalLibraryPath();
@@ -168,7 +194,7 @@ void xSEPP::ClearOriginalFunctionArray()
 }
 
 xSEPP::xSEPP()
-	:m_PluginsFolder(L"Data\\" xSE_NAME_W L"\\Plugins")
+	:m_PluginsFolder(L"Data\\" xSE_FOLDER_NAME_W L"\\Plugins")
 {
 	// Load config
 	m_Config.LoadFile(L"xSE PluginPreloader.ini");
@@ -178,8 +204,10 @@ xSEPP::xSEPP()
 		m_OriginalLibraryPath = originalLibrary;
 	}
 
+	m_LoadMethod = (LoadMethod)GetConfigOptionInt(L"General", L"LoadMethod", (int)m_LoadMethod);
+
 	// Open log
-	_wfopen_s(&m_Log, L"xSE PluginPreloader.log", L"wb");
+	_wfopen_s(&m_Log, L"xSE PluginPreloader.log", L"wb+");
 	Log(L"Log opened");
 
 	// Load
@@ -187,26 +215,10 @@ xSEPP::xSEPP()
 	if (m_OriginalLibrary)
 	{
 		LoadOriginalLibraryFunctions();
-
-		Log(L"Overriding '_initterm_e' function for delayed load");
-		#if xSE_PLATFORM_F4SE
-
-		m_initterm_e = DetourFunctionIAT(DelayedLoad, "MSVCR110.dll", "_initterm_e");
-
-		#elif xSE_PLATFORM_NVSE
-
-		// 0x00ECCCF0 is address of '_initterm_e' in 'FalloutNV.exe'
-		m_initterm_e = DetourFunction(DelayedLoad, 0x00ECCCF0u);
-
+		
+		#if 0
+		DetourInitFunctions();
 		#endif
-
-		if (m_initterm_e == NULL)
-		{
-			UnloadOriginalLibrary();
-			m_OriginalLibrary = NULL;
-
-			Log(L"Can't override function, terminating");
-		}
 	}
 	else
 	{
@@ -228,6 +240,15 @@ xSEPP::~xSEPP()
 	}
 }
 
+void xSEPP::RunLoadPlugins()
+{
+	if (!m_PluginsLoaded)
+	{
+		Log(L"Loading plugins");
+		LoadPlugins();
+		m_PluginsLoaded = true;
+	}
+}
 KxDynamicString xSEPP::GetOriginalLibraryPath() const
 {
 	if (!m_OriginalLibraryPath.empty())
