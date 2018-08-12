@@ -1,4 +1,4 @@
-#include "stdafx.h";
+#include "stdafx.h"
 #include "xSEPluginPreloader.h"
 
 static size_t g_ThreadAttachCount = 0;
