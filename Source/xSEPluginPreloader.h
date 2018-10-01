@@ -29,6 +29,9 @@ class xSEPP
 		static xSEPP* ms_Instnace;
 
 	public:
+		const wchar_t* GetLibraryName();
+		const wchar_t* GetLibraryVersion();
+
 		static xSEPP& CreateInstnace();
 		static void DestroyInstnace();
 		static bool HasInstance()
@@ -42,7 +45,7 @@ class xSEPP
 
 		static constexpr size_t GetFunctionArraySize()
 		{
-			return 256;
+			return 512;
 		}
 		static void** GetFunctions();
 		

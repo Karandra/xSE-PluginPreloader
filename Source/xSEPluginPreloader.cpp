@@ -3,6 +3,7 @@
 #include "ScriptExtenderDefinesBase.h"
 #include "KxFileFinder.h"
 
+#if 0
 #include "Nukem Detours/Detours.h"
 #if _WIN64
 
@@ -17,9 +18,20 @@ using NukemDetoursOpt = Detours::X86Option;
 #pragma comment(lib, "Nukem Detours/detours x86.lib")
 
 #endif
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 xSEPP* xSEPP::ms_Instnace = NULL;
+
+const wchar_t* xSEPP::GetLibraryName()
+{
+	return L"xSE PluginPreloader";
+}
+const wchar_t* xSEPP::GetLibraryVersion()
+{
+	return L"0.1.2";
+}
+
 xSEPP& xSEPP::CreateInstnace()
 {
 	if (!HasInstance())
@@ -141,6 +153,7 @@ void xSEPP::LogLoadStatus(const wchar_t* path, LoadStatus status) const
 
 void xSEPP::DetourInitFunctions()
 {
+	#if 0
 	Log(L"Overriding '_initterm_e' function for delayed load");
 	void* func = NULL;
 
@@ -168,6 +181,7 @@ void xSEPP::DetourInitFunctions()
 
 		Log(L"Can't override function, terminating");
 	}
+	#endif
 }
 
 void xSEPP::LoadOriginalLibrary()
@@ -209,6 +223,8 @@ xSEPP::xSEPP()
 	// Open log
 	_wfopen_s(&m_Log, L"xSE PluginPreloader.log", L"wb+");
 	Log(L"Log opened");
+	Log(L"%s v%s loaded", GetLibraryName(), GetLibraryVersion());
+	Log(L"Script Extender platform: %s", xSE_NAME_W);
 
 	// Load
 	LoadOriginalLibrary();
@@ -263,13 +279,13 @@ KxDynamicString xSEPP::GetOriginalLibraryPath() const
 
 		path.resize(MAX_PATH);
 		path.resize(::GetSystemDirectoryW(path.data(), MAX_PATH));
-		path += L"\\X3DAudio1_7.dll";
+		path += L"\\IpHlpAPI.dll";
 
 		#elif xSE_PLATFORM_NVSE
 
 		path.resize(MAX_PATH);
 		path.resize(::GetSystemDirectoryW(path.data(), MAX_PATH));
-		path += L"\\DInput8.dll";
+		path += L"\\WinMM.dll";
 
 		#endif
 

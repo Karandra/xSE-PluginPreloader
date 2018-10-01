@@ -77,25 +77,25 @@
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration)\</OutDir>
-    <TargetName>X3DAudio1_7</TargetName>
+    <TargetName>IpHlpAPI</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration)\</OutDir>
-    <TargetName>DInput8</TargetName>
+    <TargetName>WinMM</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration)\</OutDir>
-    <TargetName>X3DAudio1_7</TargetName>
+    <TargetName>IpHlpAPI</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration)\</OutDir>
-    <TargetName>DInput8</TargetName>
+    <TargetName>WinMM</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
     <ClCompile>
@@ -213,7 +213,9 @@ copy "$(ProjectDir)Build\$(SolutionName).ini" "$(ProjectDir)Bin\$(Configuration)
     <ClInclude Include="resource.h" />
     <ClInclude Include="Source\bink2w64.h" />
     <ClInclude Include="Source\DInput8.h" />
+    <ClInclude Include="Source\IpHlpAPI.h" />
     <ClInclude Include="Source\SimpleINI.h" />
+    <ClInclude Include="Source\WinMM.h" />
     <ClInclude Include="Source\X3DAudio17.h" />
     <ClInclude Include="Source\xSEPluginPreloader.h" />
     <ClInclude Include="Source\KxDynamicString.h" />

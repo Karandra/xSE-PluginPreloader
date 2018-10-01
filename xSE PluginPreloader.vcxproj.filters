@@ -70,6 +70,12 @@
     <ClInclude Include="Source\SimpleINI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\IpHlpAPI.h">
+      <Filter>Header Files\ProxyFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\WinMM.h">
+      <Filter>Header Files\ProxyFunctions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Source\KxDynamicString.natvis">
