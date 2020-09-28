@@ -1,32 +1,44 @@
-#include "stdafx.h"
+#include "pch.hpp"
 #include "xSEPluginPreloader.h"
 
-static size_t g_ThreadAttachCount = 0;
+namespace
+{
+	size_t g_ThreadAttachCount = 0;
+}
+
 BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 {
+	using namespace xSE;
+
 	switch (event)
 	{
 		case DLL_PROCESS_ATTACH:
 		{
-			xSEPP& instance = xSEPP::CreateInstnace();
-			if (instance.IsOK() && instance.ShouldUseDirectLoad())
+			PreloadHandler& handler = PreloadHandler::CreateInstnace();
+			if (!handler.IsNull() && handler.ShouldUseDirectLoad())
 			{
-				instance.RunLoadPlugins();
+				handler.LoadPlugins();
 			}
-			return instance.IsOK();
+
+			if (handler.IsNull())
+			{
+				handler.Log(wxS("Invalid state of PreloadHandler reported. Terminating process."));
+				return FALSE;
+			}
+			return TRUE;
 		}
 		case DLL_THREAD_ATTACH:
 		{
 			g_ThreadAttachCount++;
-			if (g_ThreadAttachCount == 2 && xSEPP::GetInstance().ShouldUseDelayedLoad())
+			if (g_ThreadAttachCount == 2 && PreloadHandler::GetInstance().ShouldUseDelayedLoad())
 			{
-				xSEPP::GetInstance().RunLoadPlugins();
+				PreloadHandler::GetInstance().LoadPlugins();
 			}
 			break;
 		}
 		case DLL_PROCESS_DETACH:
 		{
-			xSEPP::DestroyInstnace();
+			PreloadHandler::DestroyInstnace();
 			break;
 		}
 	};

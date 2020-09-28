@@ -1,4 +1,4 @@
-struct IpHlpAPI
+namespace xSE::PluginPreloader::Library::IpHlpAPI
 {
 	enum Enum
 	{

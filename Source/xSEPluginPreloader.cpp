@@ -1,9 +1,13 @@
-#include "stdafx.h"
+#include "pch.hpp"
 #include "xSEPluginPreloader.h"
 #include "ScriptExtenderDefinesBase.h"
-#include "KxFileFinder.h"
+#include <kxf/FileSystem/NativeFileSystem.h>
+#include <kxf/System/ShellOperations.h>
+#include <kxf/System/Win32Error.h>
+#include <kxf/System/NtStatus.h>
+#include <kxf/Utility/Container.h>
 
-#if 0
+#ifdef USE_NUKEM_DETOURS
 #include "Nukem Detours/Detours.h"
 #if _WIN64
 
@@ -20,275 +24,414 @@ using NukemDetoursOpt = Detours::X86Option;
 #endif
 #endif
 
-//////////////////////////////////////////////////////////////////////////
-xSEPP* xSEPP::ms_Instnace = NULL;
+namespace
+{
+	std::unique_ptr<xSE::PreloadHandler> g_Instnace;
 
-const wchar_t* xSEPP::GetLibraryName()
-{
-	return L"xSE PluginPreloader";
-}
-const wchar_t* xSEPP::GetLibraryVersion()
-{
-	return L"0.1.2";
-}
+	using TInitialize = void(__cdecl*)(void);
+	constexpr auto g_ConfigFileName = wxS("xSE PluginPreloader.xml");
+	constexpr auto g_LogFileName = wxS("xSE PluginPreloader.log");
 
-xSEPP& xSEPP::CreateInstnace()
-{
-	if (!HasInstance())
+	template<class TFunc>
+	__declspec(noinline) uint32_t SEHTryExcept(TFunc&& func)
 	{
-		ms_Instnace = new xSEPP();
-	}
-	return *ms_Instnace;
-}
-void xSEPP::DestroyInstnace()
-{
-	delete ms_Instnace;
-	ms_Instnace = NULL;
-}
-
-const wchar_t* xSEPP::GetConfigOption(const wchar_t* section, const wchar_t* key, const wchar_t* defaultValue) const
-{
-	return m_Config.GetValue(section, key, defaultValue);
-}
-int xSEPP::GetConfigOptionInt(const wchar_t* section, const wchar_t* key, int defaultValue) const
-{
-	const wchar_t* value = GetConfigOption(section, key, NULL);
-	if (value)
-	{
-		int valueInt = defaultValue;
-		swscanf(value, L"%d", &valueInt);
-		return valueInt;
-	}
-	return defaultValue;
-}
-
-xSEPP::LoadStatus xSEPP::LoadPlugin(const wchar_t* path)
-{
-	Log(L"Trying to load '%s'", path);
-	LoadStatus status = LoadStatus::LoadFailed;
-
-	__try
-	{
-		HMODULE handle = ::LoadLibraryW(path);
-		if (handle)
+		__try
 		{
-			status = LoadStatus::Loaded;
-			m_LoadedLibraries.push_back(handle);
+			std::invoke(func);
+			return 0;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			return ::GetExceptionCode();
+		}
+	}
 
-			InitPluginFunc initFunc = reinterpret_cast<InitPluginFunc>(::GetProcAddress(handle, "Initialize"));
-			if (initFunc)
+	void LogLoadStatus(const kxf::FSPath& path, xSE::PluginStatus status)
+	{
+		using namespace xSE;
+
+		switch (status)
+		{
+			case PluginStatus::Loaded:
 			{
-				status = LoadStatus::InitializationFailed;
-				initFunc();
-				status = LoadStatus::LoadedInitialized;
+				g_Instnace->Log(wxS("Plugin '%1' loaded successfully"), path.GetFullPath());
+				break;
+			}
+			case PluginStatus::Initialized:
+			{
+				g_Instnace->Log(wxS("Plugin '%1' loaded successfully, 'Initialize' executed successfully"), path.GetFullPath());
+				break;
+			}
+			case PluginStatus::FailedLoad:
+			{
+				g_Instnace->Log(wxS("Plugin '%1' failed to load"), path.GetFullPath());
+				break;
+			}
+			case PluginStatus::FailedInitialize:
+			{
+				g_Instnace->Log(wxS("Plugin '%1' failed to load. Exception was thrown during 'Initialize' execution"), path.GetFullPath());
+				break;
+			}
+			default:
+			{
+				g_Instnace->Log(wxS("Unknown plugin status code (%1): '%2"), static_cast<uint32_t>(status), path.GetFullPath());
+				break;
+			}
+		};
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+namespace xSE
+{
+	kxf::String PreloadHandler::GetLibraryName()
+	{
+		return wxS("xSE PluginPreloader");
+	}
+	kxf::String PreloadHandler::GetLibraryVersion()
+	{
+		return wxS("0.2");
+	}
+
+	PreloadHandler& PreloadHandler::CreateInstnace()
+	{
+		if (!g_Instnace)
+		{
+			g_Instnace = std::make_unique<xSE::PreloadHandler>();
+		}
+		return *g_Instnace;
+	}
+	void PreloadHandler::DestroyInstnace()
+	{
+		g_Instnace = nullptr;
+	}
+	PreloadHandler& PreloadHandler::GetInstance()
+	{
+		return *g_Instnace;
+	}
+	bool PreloadHandler::HasInstance()
+	{
+		return g_Instnace != nullptr;
+	}
+
+	kxf::FSPath PreloadHandler::GetOriginalLibraryPath() const
+	{
+		if (m_OriginalLibraryPath)
+		{
+			return m_OriginalLibraryPath;
+		}
+		return GetOriginalLibraryDefaultPath();
+	}
+	kxf::FSPath PreloadHandler::GetOriginalLibraryDefaultPath() const
+	{
+		#if xSE_PLATFORM_F4SE
+		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / wxS("IpHlpAPI.dll");
+		#elif xSE_PLATFORM_NVSE
+		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / wxS("WinMM.dll");
+		#endif
+	}
+	
+	void PreloadHandler::DoLoadPlugins()
+	{
+		Log(L"Searching directory '%1' for plugins", m_PluginsDirectory.GetFullPath());
+
+		kxf::NativeFileSystem fs;
+		const size_t itemsScanned = fs.EnumItems(m_PluginsDirectory, [&](kxf::FileItem fileItem)
+		{
+			if (fileItem.IsNormalItem())
+			{
+				const kxf::FSPath libraryPath = m_PluginsDirectory / fileItem.GetName().BeforeLast(wxS('_')) + wxS(".dll");
+				Log(wxS("Preload directive '%1' found, trying to load the corresponding library '%2'"), fileItem.GetName(), libraryPath.GetFullPath());
+
+				PluginStatus status = DoLoadPlugin(libraryPath);
+				LogLoadStatus(libraryPath, status);
+			}
+			return true;
+		}, wxS("*_preload.txt"), kxf::FSActionFlag::LimitToFiles);
+
+		Log(L"Loading finished, %1 plugins loaded, %2 items scanned", m_LoadedLibraries.size(), itemsScanned);
+	}
+	void PreloadHandler::DoUnloadPlugins()
+	{
+		Log(wxS("Unloading plugins"));
+		m_LoadedLibraries.clear();
+	}
+	PluginStatus PreloadHandler::DoLoadPlugin(const kxf::FSPath& path)
+	{
+		Log(wxS("Trying to load '%1'"), path.GetFullPath());
+
+		kxf::DynamicLibrary* pluginLibrary = nullptr;
+		PluginStatus pluginStatus = PluginStatus::FailedLoad;
+
+		// Load plugin library
+		const kxf::NtStatus loadStatus = SEHTryExcept([&]()
+		{
+			if (kxf::DynamicLibrary& library = m_LoadedLibraries.emplace_back(path))
+			{
+				pluginStatus = PluginStatus::Loaded;
+				pluginLibrary = &library;
+			}
+			else
+			{
+				m_LoadedLibraries.pop_back();
+
+				auto lastError = kxf::Win32Error::GetLastError();
+				Log(wxS("Couldn't load plugin '%1': [Win32: %2 (%3)]"), path.GetFullPath(), lastError.GetMessage(), lastError.GetValue());
+			}
+		});
+
+		if (loadStatus)
+		{
+			if (pluginLibrary)
+			{
+				Log(wxS("Library '%1' is loaded, attempt to call initialization routine"), path.GetFullPath());
+
+				// Call initialization routine
+				const kxf::NtStatus initializeStatus = SEHTryExcept([&]()
+				{
+					if (auto initalize = pluginLibrary->GetFunction<TInitialize>("Initialize"))
+					{
+						std::invoke(*initalize);
+						pluginStatus = PluginStatus::Initialized;
+					}
+					else
+					{
+						// No initialization routine for this plugin. Proceed.
+					}
+				});
+				if (!initializeStatus)
+				{
+					pluginStatus = PluginStatus::FailedInitialize;
+					Log(wxS("Exception occurred inside plugin's initialization routine '%1': [NtStatus: %2 (%3)]"), path.GetFullPath(), initializeStatus.GetMessage(), initializeStatus.GetValue());
+				}
+			}
+			else
+			{
+				// No exception occurred, but the library isn't loaded. Proceed.
 			}
 		}
 		else
 		{
-			status = LoadStatus::LoadFailed;
+			pluginStatus = PluginStatus::FailedLoad;
+			Log(wxS("Exception occurred while loading plugin library '%1': [NtStatus: %2 (%3)]"), path.GetFullPath(), loadStatus.GetMessage(), loadStatus.GetValue());
 		}
+		return pluginStatus;
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-	}
-	return status;
-}
-void xSEPP::LoadPlugins()
-{
-	Log(L"Searching '%s' folder for plugins", m_PluginsFolder);
 
-	KxFileFinder finder(m_PluginsFolder, L"*_preload.txt");
-	KxFileFinderItem item = finder.FindNext();
-	while (finder.IsOK())
+	bool PreloadHandler::CheckAllowedProcesses() const
 	{
-		if (item.IsNormalItem() && item.IsFile())
+		const kxf::String thisExecutableName = m_ExecutablePath.GetName();
+
+		Log(wxS("Checking process name '%1' to determine if it's allowed to preload plugins. Following process names are allowed:"), thisExecutableName);
+		if (!m_AllowedProcessNames.empty())
 		{
-			KxDynamicString pathDLL = item.GetFullPath().before_last(L'_');
-			pathDLL += L".dll";
-
-			LoadStatus status = LoadPlugin(pathDLL);
-			LogLoadStatus(pathDLL, status);
+			for (const kxf::String& name: m_AllowedProcessNames)
+			{
+				Log(wxS("\t%1"), name);
+			}
 		}
-		item = finder.FindNext();
-	}
-
-	Log(L"Loading finished, %zu plugins loaded", m_LoadedLibraries.size());
-}
-void xSEPP::UnloadPlugins()
-{
-	Log(L"Unloading plugins");
-
-	for (HMODULE handle : m_LoadedLibraries)
-	{
-		::FreeLibrary(handle);
-	}
-	m_LoadedLibraries.clear();
-}
-void xSEPP::LogLoadStatus(const wchar_t* path, LoadStatus status) const
-{
-	switch (status)
-	{
-		case LoadStatus::Loaded:
+		else
 		{
-			Log(L"Plugin '%s' loaded successfully", path);
-			break;
+			Log(wxS("\t<none>"));
 		}
-		case LoadStatus::LoadedInitialized:
+
+		return kxf::Utility::Container::Contains(m_AllowedProcessNames, [&](const kxf::String& name)
 		{
-			Log(L"Plugin '%s' loaded successfully, Initialize() executed", path);
-			break;
-		}
-		case LoadStatus::LoadFailed:
-		{
-			Log(L"Plugin '%s' failed to load", path);
-			break;
-		}
-		case LoadStatus::InitializationFailed:
-		{
-			Log(L"Plugin '%s' failed to load. Exception was thrown during Initialize() execution", path);
-			break;
-		}
-	};
-}
-
-void xSEPP::DetourInitFunctions()
-{
-	#if 0
-	Log(L"Overriding '_initterm_e' function for delayed load");
-	void* func = NULL;
-
-	#if xSE_PLATFORM_F4SE
-
-	//m_initterm_e = DetourFunctionIAT(DelayedLoad_InitTrem, "MSVCR110.dll", "_initterm_e");
-	//func = m_initterm_e;
-
-	// 0x14295BFD0 is address of 'start' function in Fallout4.exe v1.10.106
-	m_start = DetourFunctionThis(DelayedLoad_start, 0x14295BFD0u);
-	func = m_start;
-
-	#elif xSE_PLATFORM_NVSE
-
-	// 0x00ECCCF0 is address of '_initterm_e' in 'FalloutNV.exe'
-	m_initterm_e = DetourFunctionThis(DelayedLoad_InitTrem, 0x00ECCCF0u);
-	func = m_initterm_e;
-
-	#endif
-
-	if (func == NULL)
-	{
-		UnloadOriginalLibrary();
-		m_OriginalLibrary = NULL;
-
-		Log(L"Can't override function, terminating");
-	}
-	#endif
-}
-
-void xSEPP::LoadOriginalLibrary()
-{
-	KxDynamicString path = GetOriginalLibraryPath();
-	Log(L"Loading original library '%s'", path.data());
-
-	ClearOriginalFunctionArray();
-	m_OriginalLibrary = ::LoadLibraryW(path);
-}
-void xSEPP::UnloadOriginalLibrary()
-{
-	Log(L"Unloading original library");
-
-	FreeLibrary(m_OriginalLibrary);
-	ClearOriginalFunctionArray();
-}
-void xSEPP::ClearOriginalFunctionArray()
-{
-	for (size_t i = 0; i < GetFunctionArraySize(); i++)
-	{
-		GetFunctions()[i] = NULL;
-	}
-}
-
-xSEPP::xSEPP()
-	:m_PluginsFolder(L"Data\\" xSE_FOLDER_NAME_W L"\\Plugins")
-{
-	// Load config
-	m_Config.LoadFile(L"xSE PluginPreloader.ini");
-
-	if (const wchar_t* originalLibrary = GetConfigOption(L"General", L"OriginalLibrary"))
-	{
-		m_OriginalLibraryPath = originalLibrary;
+			if (name.IsSameAs(thisExecutableName, kxf::StringOpFlag::IgnoreCase))
+			{
+				Log(wxS("Match found: '%1' -> '%2'"), thisExecutableName, name);
+				return true;
+			}
+			return false;
+		});
 	}
 
-	m_LoadMethod = (LoadMethod)GetConfigOptionInt(L"General", L"LoadMethod", (int)m_LoadMethod);
-
-	// Open log
-	_wfopen_s(&m_Log, L"xSE PluginPreloader.log", L"wb+");
-	Log(L"Log opened");
-	Log(L"%s v%s loaded", GetLibraryName(), GetLibraryVersion());
-	Log(L"Script Extender platform: %s", xSE_NAME_W);
-
-	// Load
-	LoadOriginalLibrary();
-	if (m_OriginalLibrary)
+	#ifdef USE_NUKEM_DETOURS
+	void PreloadHandler::DetourInitFunctions()
 	{
-		LoadOriginalLibraryFunctions();
-		
-		#if 0
-		DetourInitFunctions();
-		#endif
-	}
-	else
-	{
-		Log(L"Can't load original library, terminating");
-	}
-}
-xSEPP::~xSEPP()
-{
-	if (m_OriginalLibrary)
-	{
-		UnloadPlugins();
-		UnloadOriginalLibrary();
-	}
-
-	Log(L"Log closed");
-	if (m_Log)
-	{
-		fclose(m_Log);
-	}
-}
-
-void xSEPP::RunLoadPlugins()
-{
-	if (!m_PluginsLoaded)
-	{
-		Log(L"Loading plugins");
-		LoadPlugins();
-		m_PluginsLoaded = true;
-	}
-}
-KxDynamicString xSEPP::GetOriginalLibraryPath() const
-{
-	if (!m_OriginalLibraryPath.empty())
-	{
-		return m_OriginalLibraryPath;
-	}
-	else
-	{
-		KxDynamicString path;
+		#ifdef USE_NUKEM_DETOURS
+		Log(wxS("Overriding '_initterm_e' function for delayed load"));
+		void* func = nullptr;
 
 		#if xSE_PLATFORM_F4SE
 
-		path.resize(MAX_PATH);
-		path.resize(::GetSystemDirectoryW(path.data(), MAX_PATH));
-		path += L"\\IpHlpAPI.dll";
+		//m_initterm_e = DetourFunctionIAT(DelayedLoad_InitTrem, "MSVCR110.dll", "_initterm_e");
+		//func = m_initterm_e;
+
+		// 0x14295BFD0 is address of 'start' function in Fallout4.exe v1.10.106
+		m_start = DetourFunctionThis(DelayedLoad_start, 0x14295BFD0u);
+		func = m_start;
 
 		#elif xSE_PLATFORM_NVSE
 
-		path.resize(MAX_PATH);
-		path.resize(::GetSystemDirectoryW(path.data(), MAX_PATH));
-		path += L"\\WinMM.dll";
+		// 0x00ECCCF0 is address of '_initterm_e' in 'FalloutNV.exe'
+		m_initterm_e = DetourFunctionThis(DelayedLoad_InitTrem, 0x00ECCCF0u);
+		func = m_initterm_e;
 
 		#endif
 
-		return path;
+		if (!func)
+		{
+			UnloadOriginalLibrary();
+			m_OriginalLibrary.Unload();
+
+			Log(wxS("Can't override function, terminating"));
+		}
+		#endif
+	}
+	#endif
+
+	void PreloadHandler::LoadOriginalLibrary()
+	{
+		kxf::FSPath path = GetOriginalLibraryPath();
+		Log(wxS("Loading original library '%1'"), path.GetFullPath());
+
+		ClearOriginalFunctions();
+		if (m_OriginalLibrary.Load(path))
+		{
+			Log(wxS("Original library '%1' loaded successfully"), path.GetFullPath());
+		}
+		else
+		{
+			auto lastError = kxf::Win32Error::GetLastError();
+			Log(wxS("Couldn't load library '%1': [Win32: %2 (%3)]"), path.GetFullPath(), lastError.GetMessage(), lastError.GetValue());
+		}
+	}
+	void PreloadHandler::UnloadOriginalLibrary()
+	{
+		Log(wxS("Unloading original library '%1'"), m_OriginalLibrary.GetFilePath().GetFullPath());
+
+		m_OriginalLibrary.Unload();
+		ClearOriginalFunctions();
+	}
+	void PreloadHandler::ClearOriginalFunctions()
+	{
+		std::fill_n(GetFunctions(), GetFunctionsCount(), nullptr);
+	}
+
+	PreloadHandler::PreloadHandler()
+	{
+		// Initialize plugins directory
+		kxf::NativeFileSystem fileSystem(kxf::NativeFileSystem::GetExecutableDirectory());
+		m_PluginsDirectory = fileSystem.GetCurrentDirectory() / "Data" / xSE_FOLDER_NAME_W / "Plugins";
+		m_ExecutablePath = kxf::DynamicLibrary::GetExecutingModule().GetFilePath();
+
+		// Open log
+		_wfopen_s(&m_Log, g_LogFileName, L"wb+");
+		Log(wxS("Log opened"));
+		Log(wxS("%1 v%2 loaded"), GetLibraryName(), GetLibraryVersion());
+		Log(wxS("Script Extender platform: %1"), xSE_NAME_W);
+
+		// Load config
+		if (auto stream = fileSystem.OpenToRead(g_ConfigFileName))
+		{
+			m_Config.Load(*stream);
+		}
+		else
+		{
+			Log(wxS("Couldn't load configuration from '%1', default configuration will be used"), fileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
+		}
+
+		m_OriginalLibraryPath = [&]()
+		{
+			kxf::String path = m_Config.QueryElement(wxS("xSE/PluginPreloader/General/OriginalLibrary")).GetValue();
+			if (path.IsEmpty())
+			{
+				Log(wxS("Original library path is not set, using default '%1'"), GetOriginalLibraryDefaultPath().GetFullPath());
+			}
+			else
+			{
+				Log(wxS("Original library path is set to '%1'"), path);
+			}
+			return path;
+		}();
+		m_LoadMethod = [&]()
+		{
+			kxf::String methodName = m_Config.QueryElement(wxS("xSE/PluginPreloader/General/LoadMethod")).GetValue();
+			if (methodName == wxS("Direct"))
+			{
+				Log(wxS("Load method is set to 'Direct'"));
+				return LoadMethod::Direct;
+			}
+			else if (methodName == wxS("Delayed"))
+			{
+				Log(wxS("Load method is set to 'Delayed'"));
+				return LoadMethod::Delayed;
+			}
+			else
+			{
+				Log(wxS("Unknown load method, using 'Direct'"));
+				return LoadMethod::Direct;
+			}
+		}();
+		m_AllowedProcessNames = [&]()
+		{
+			std::vector<kxf::String> processes;
+			m_Config.QueryElement(wxS("xSE/PluginPreloader/Processes")).EnumChildElements([&](kxf::XMLNode itemNode)
+			{
+				if (itemNode.GetAttributeBool(wxS("Allow")))
+				{
+					if (processes.emplace_back(itemNode.GetAttribute(wxS("Name"))).IsEmpty())
+					{
+						processes.pop_back();
+					}
+				}
+				return true;
+			}, wxS("Item"));
+
+			return processes;
+		}();
+
+		// Check processes, if we are not allowed to preload inside this process set the flag and don't load plugins but still load the original library.
+		m_PluginsLoadAllowed = CheckAllowedProcesses();
+		if (!m_PluginsLoadAllowed)
+		{
+			Log(wxS("This process '%1' is not allowed to preload plugins"), m_ExecutablePath.GetName());
+		}
+
+		// Load
+		LoadOriginalLibrary();
+		if (m_OriginalLibrary)
+		{
+			LoadOriginalLibraryFunctions();
+			
+			#ifdef USE_NUKEM_DETOURS
+			DetourInitFunctions();
+			#endif
+		}
+		else
+		{
+			Log(wxS("Can't load original library, terminating"));
+		}
+	}
+	PreloadHandler::~PreloadHandler()
+	{
+		if (m_OriginalLibrary)
+		{
+			DoUnloadPlugins();
+			UnloadOriginalLibrary();
+		}
+
+		Log(L"Log closed");
+		if (m_Log)
+		{
+			fclose(m_Log);
+		}
+	}
+
+	void PreloadHandler::LoadPlugins()
+	{
+		if (!m_PluginsLoadAllowed)
+		{
+			Log(wxS("Plugins preload disabled for this process"));
+			return;
+		}
+
+		if (!m_PluginsLoaded)
+		{
+			Log(wxS("Loading plugins"));
+			DoLoadPlugins();
+			m_PluginsLoaded = true;
+		}
 	}
 }

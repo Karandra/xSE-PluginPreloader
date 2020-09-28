@@ -1,4 +1,4 @@
-struct WinMM
+namespace xSE::PluginPreloader::Library::WinMM
 {
 	enum Enum
 	{

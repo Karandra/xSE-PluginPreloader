@@ -1,100 +1,85 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
+    <Filter Include="Source">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="Header Files\ProxyFunctions">
+    <Filter Include="Source\ProxyFunctions">
       <UniqueIdentifier>{50fce867-34ad-4e25-8c58-39eff42d1db8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\KxFramework">
-      <UniqueIdentifier>{b4ee738c-289c-4fda-90ab-3731e8e1921c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\KxFramework">
-      <UniqueIdentifier>{008b1c5f-518e-4d81-98ff-4d829359914d}</UniqueIdentifier>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\DLLMain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="Source\KxFileFinder.cpp">
-      <Filter>Source Files\KxFramework</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\KxDynamicString.cpp">
-      <Filter>Source Files\KxFramework</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\xSEPluginPreloader.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\xSEPluginPreloaderFunctions.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\pch.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
     <ClInclude Include="Source\ScriptExtenderDefinesBase.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\DInput8.h">
-      <Filter>Header Files\ProxyFunctions</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\bink2w64.h">
-      <Filter>Header Files\ProxyFunctions</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\KxDynamicString.h">
-      <Filter>Header Files\KxFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\KxFileFinder.h">
-      <Filter>Header Files\KxFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\X3DAudio17.h">
-      <Filter>Header Files\ProxyFunctions</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\xSEPluginPreloader.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Resource Files</Filter>
+    <ClInclude Include="Source\ProxyFunctions\DInput8.h">
+      <Filter>Source\ProxyFunctions</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SimpleINI.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Source\ProxyFunctions\IpHlpAPI.h">
+      <Filter>Source\ProxyFunctions</Filter>
     </ClInclude>
-    <ClInclude Include="Source\IpHlpAPI.h">
-      <Filter>Header Files\ProxyFunctions</Filter>
+    <ClInclude Include="Source\ProxyFunctions\WinMM.h">
+      <Filter>Source\ProxyFunctions</Filter>
     </ClInclude>
-    <ClInclude Include="Source\WinMM.h">
-      <Filter>Header Files\ProxyFunctions</Filter>
+    <ClInclude Include="Source\ProxyFunctions\X3DAudio17.h">
+      <Filter>Source\ProxyFunctions</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Natvis Include="Source\KxDynamicString.natvis">
-      <Filter>Resource Files</Filter>
-    </Natvis>
+    <ClInclude Include="Source\ProxyFunctions\bink2w64.h">
+      <Filter>Source\ProxyFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\pch.hpp">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Framework.hpp">
+      <Filter>Source</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="Source\UnconditionalJump.asm">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </MASM>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="xSE PluginPreloader.rc">
-      <Filter>Resource Files</Filter>
+      <Filter>Resources</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Build\xSE PluginPreloader.ini">
-      <Filter>Resource Files</Filter>
+    <Xml Include="Build\xSE PluginPreloader.xml">
+      <Filter>Resources</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ChangeLog.md">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Resources</Filter>
     </None>
   </ItemGroup>
 </Project>

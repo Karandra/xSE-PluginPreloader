@@ -1,7 +1,7 @@
 # xSE PluginPreloader
-Plugin preloader for Fallout NV and Fallout 4 Script Extender.
+Plugin preloader for Fallout 4 Script Extender.
 
-Uses [Detours](https://github.com/Nukem9/detours) and [SimpleINI](https://github.com/brofield/simpleini).
+Uses [KxFramework](https://github.com/KerberX/KxFramework). Use [VCPkg](https://github.com/microsoft/vcpkg) to get the framework as a dependency. Details on KxFramework page.
 
 # Download page
 Nexus: https://www.nexusmods.com/fallout4/mods/33946
