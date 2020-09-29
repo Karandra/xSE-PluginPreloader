@@ -77,25 +77,25 @@
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>$(ProjectName)</TargetName>
+    <TargetName>IpHlpAPI</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>$(ProjectName)</TargetName>
+    <TargetName>WinMM</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>$(ProjectName)</TargetName>
+    <TargetName>IpHlpAPI</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>$(ProjectName)</TargetName>
+    <TargetName>WinMM</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
     <VcpkgConfiguration>Release</VcpkgConfiguration>
@@ -134,6 +134,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>Exports\F4SE.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -166,6 +167,7 @@ copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>Exports\NVSE.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -198,6 +200,7 @@ copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>Exports\F4SE.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -230,6 +233,7 @@ copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>Exports\NVSE.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -283,6 +287,8 @@ copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)
   </ItemGroup>
   <ItemGroup>
     <None Include="ChangeLog.md" />
+    <None Include="Exports\F4SE.def" />
+    <None Include="Exports\NVSE.def" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
