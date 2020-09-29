@@ -1,9 +1,9 @@
 *Dates in DD.MM.YYYY*
 
 # Version 0.2, 29.09.2020
-- Rewritten using KxFramework.
+- Rewritten using [KxFramework](https://github.com/KerberX/KxFramework).
 - Added more logging and error reporting.
-- Added process filer to exclude some processes from preloading plugins.
+- Added process filter to exclude some processes from preloading plugins.
 - Config file uses XML format instead of INI.
 
 # Version 0.1.2, 02.10.2018

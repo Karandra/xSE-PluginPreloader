@@ -6,6 +6,7 @@
 #include <kxf/System/Win32Error.h>
 #include <kxf/System/NtStatus.h>
 #include <kxf/Utility/Container.h>
+#include <kxf/Utility/CallAtScopeExit.h>
 
 #ifdef USE_NUKEM_DETOURS
 #include "Nukem Detours/Detours.h"
@@ -31,6 +32,7 @@ namespace
 	using TInitialize = void(__cdecl*)(void);
 	constexpr auto g_ConfigFileName = wxS("xSE PluginPreloader.xml");
 	constexpr auto g_LogFileName = wxS("xSE PluginPreloader.log");
+	constexpr kxf::XChar g_LogIndentBuffer[] = wxS("    ");
 
 	template<class TFunc>
 	__declspec(noinline) uint32_t SEHTryExcept(TFunc&& func)
@@ -54,27 +56,27 @@ namespace
 		{
 			case PluginStatus::Loaded:
 			{
-				g_Instnace->Log(wxS("Plugin '%1' loaded successfully"), path.GetFullPath());
+				g_Instnace->LogIndent(1, wxS("Plugin '%1' loaded successfully"), path.GetFullPath());
 				break;
 			}
 			case PluginStatus::Initialized:
 			{
-				g_Instnace->Log(wxS("Plugin '%1' loaded successfully, 'Initialize' executed successfully"), path.GetFullPath());
+				g_Instnace->LogIndent(1, wxS("Plugin '%1' loaded successfully, 'Initialize' executed successfully"), path.GetFullPath());
 				break;
 			}
 			case PluginStatus::FailedLoad:
 			{
-				g_Instnace->Log(wxS("Plugin '%1' failed to load"), path.GetFullPath());
+				g_Instnace->LogIndent(1, wxS("Plugin '%1' failed to load"), path.GetFullPath());
 				break;
 			}
 			case PluginStatus::FailedInitialize:
 			{
-				g_Instnace->Log(wxS("Plugin '%1' failed to load. Exception was thrown during 'Initialize' execution"), path.GetFullPath());
+				g_Instnace->LogIndent(1, wxS("Plugin '%1' failed to load. Exception was thrown during 'Initialize' execution"), path.GetFullPath());
 				break;
 			}
 			default:
 			{
-				g_Instnace->Log(wxS("Unknown plugin status code (%1): '%2"), static_cast<uint32_t>(status), path.GetFullPath());
+				g_Instnace->LogIndent(1, wxS("Unknown plugin status code (%1): '%2"), static_cast<uint32_t>(status), path.GetFullPath());
 				break;
 			}
 		};
@@ -130,10 +132,30 @@ namespace xSE
 		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / wxS("WinMM.dll");
 		#endif
 	}
-	
+
 	void PreloadHandler::DoLoadPlugins()
 	{
-		Log(L"Searching directory '%1' for plugins", m_PluginsDirectory.GetFullPath());
+		Log(wxS("Searching directory '%1' for plugins"), m_PluginsDirectory.GetFullPath());
+
+		// Install exception handler and remove it after loading is done
+		Log(wxS("Installing vectored exception handler"));
+		m_VectoredExceptionHandler.Install([](_EXCEPTION_POINTERS* exceptionInfo) -> LONG
+		{
+			if (g_Instnace && exceptionInfo)
+			{
+				return g_Instnace->OnVectoredException(*exceptionInfo);
+			}
+			return EXCEPTION_CONTINUE_SEARCH;
+		}, VectoredExceptionHandler::Mode::ExceptionHandler, VectoredExceptionHandler::Order::First);
+		LogIndent(1, wxS("Installing vectored exception handler: %1"), m_VectoredExceptionHandler.IsInstalled() ? "success" : "failed");
+		kxf::Utility::CallAtScopeExit atExit = [&]()
+		{
+			if (m_VectoredExceptionHandler.IsInstalled())
+			{
+				Log(wxS("Removing vectored exception handler"));
+				m_VectoredExceptionHandler.Remove();
+			}
+		};
 
 		kxf::NativeFileSystem fs;
 		const size_t itemsScanned = fs.EnumItems(m_PluginsDirectory, [&](kxf::FileItem fileItem)
@@ -149,7 +171,7 @@ namespace xSE
 			return true;
 		}, wxS("*_preload.txt"), kxf::FSActionFlag::LimitToFiles);
 
-		Log(L"Loading finished, %1 plugins loaded, %2 items scanned", m_LoadedLibraries.size(), itemsScanned);
+		Log(wxS("Loading finished, %1 plugins loaded, %2 items scanned"), m_LoadedLibraries.size(), itemsScanned);
 	}
 	void PreloadHandler::DoUnloadPlugins()
 	{
@@ -158,25 +180,22 @@ namespace xSE
 	}
 	PluginStatus PreloadHandler::DoLoadPlugin(const kxf::FSPath& path)
 	{
-		Log(wxS("Trying to load '%1'"), path.GetFullPath());
+		LogIndent(1, wxS("Trying to load '%1'"), path.GetFullPath());
 
-		kxf::DynamicLibrary* pluginLibrary = nullptr;
+		kxf::DynamicLibrary pluginLibrary;
 		PluginStatus pluginStatus = PluginStatus::FailedLoad;
 
 		// Load plugin library
 		const kxf::NtStatus loadStatus = SEHTryExcept([&]()
 		{
-			if (kxf::DynamicLibrary& library = m_LoadedLibraries.emplace_back(path))
+			if (pluginLibrary.Load(path))
 			{
 				pluginStatus = PluginStatus::Loaded;
-				pluginLibrary = &library;
 			}
 			else
 			{
-				m_LoadedLibraries.pop_back();
-
 				auto lastError = kxf::Win32Error::GetLastError();
-				Log(wxS("Couldn't load plugin '%1': [Win32: %2 (%3)]"), path.GetFullPath(), lastError.GetMessage(), lastError.GetValue());
+				LogIndent(1, wxS("Couldn't load plugin '%1': [Win32: %2 (%3)]"), path.GetFullPath(), lastError.GetMessage(), lastError.GetValue());
 			}
 		});
 
@@ -184,25 +203,30 @@ namespace xSE
 		{
 			if (pluginLibrary)
 			{
-				Log(wxS("Library '%1' is loaded, attempt to call initialization routine"), path.GetFullPath());
+				LogIndent(1, wxS("Library '%1' is loaded, attempt to call initialization routine"), path.GetFullPath());
 
 				// Call initialization routine
 				const kxf::NtStatus initializeStatus = SEHTryExcept([&]()
 				{
-					if (auto initalize = pluginLibrary->GetFunction<TInitialize>("Initialize"))
+					if (auto initalize = pluginLibrary.GetFunction<TInitialize>("Initialize"))
 					{
 						std::invoke(*initalize);
 						pluginStatus = PluginStatus::Initialized;
 					}
 					else
 					{
-						// No initialization routine for this plugin. Proceed.
+						LogIndent(1, wxS("No initialization routine found for '%1'"), path.GetFullPath());
 					}
 				});
-				if (!initializeStatus)
+
+				if (initializeStatus)
+				{
+					m_LoadedLibraries.emplace_back(std::move(pluginLibrary));
+				}
+				else
 				{
 					pluginStatus = PluginStatus::FailedInitialize;
-					Log(wxS("Exception occurred inside plugin's initialization routine '%1': [NtStatus: %2 (%3)]"), path.GetFullPath(), initializeStatus.GetMessage(), initializeStatus.GetValue());
+					LogIndent(1, wxS("Exception occurred inside plugin's initialization routine '%1': [NtStatus: %2 (%3)]"), path.GetFullPath(), initializeStatus.GetMessage(), initializeStatus.GetValue());
 				}
 			}
 			else
@@ -213,8 +237,9 @@ namespace xSE
 		else
 		{
 			pluginStatus = PluginStatus::FailedLoad;
-			Log(wxS("Exception occurred while loading plugin library '%1': [NtStatus: %2 (%3)]"), path.GetFullPath(), loadStatus.GetMessage(), loadStatus.GetValue());
+			LogIndent(1, wxS("Exception occurred while loading plugin library '%1': [NtStatus: %2 (%3)]"), path.GetFullPath(), loadStatus.GetMessage(), loadStatus.GetValue());
 		}
+
 		return pluginStatus;
 	}
 
@@ -227,12 +252,12 @@ namespace xSE
 		{
 			for (const kxf::String& name: m_AllowedProcessNames)
 			{
-				Log(wxS("\t%1"), name);
+				LogNoTime(wxS("\t%1"), name);
 			}
 		}
 		else
 		{
-			Log(wxS("\t<none>"));
+			LogNoTime(wxS("\t<none>"));
 		}
 
 		return kxf::Utility::Container::Contains(m_AllowedProcessNames, [&](const kxf::String& name)
@@ -309,6 +334,105 @@ namespace xSE
 		std::fill_n(GetFunctions(), GetFunctionsCount(), nullptr);
 	}
 
+	size_t PreloadHandler::DoLog(const kxf::String& logString, bool addTimestamp, size_t indent) const
+	{
+		if (m_Log && !logString.IsEmptyOrWhitespace())
+		{
+			size_t totalLength = indent * std::size(g_LogIndentBuffer) - 1;
+
+			if (addTimestamp)
+			{
+				const auto timeStamp = kxf::DateTime::Now();
+				kxf::String timeStampFormatted = kxf::StringFormatter::Formatter(wxS("[%1:%2] "))(timeStamp.FormatISOCombined(wxS(' ')))(timeStamp.GetMillisecond(), 3, 10, wxS('0'));
+
+				std::fputws(timeStampFormatted.wx_str(), m_Log);
+				totalLength += timeStampFormatted.length();
+			}
+
+			for (size_t i = 0; i < indent; i++)
+			{
+				std::fputws(g_LogIndentBuffer, m_Log);
+			}
+
+			std::fputws(logString.wx_str(), m_Log);
+			std::fputws(wxS("\n"), m_Log);
+			totalLength += logString.length() + 1;
+
+			std::fflush(m_Log);
+			return totalLength;
+		}
+		return 0;
+	}
+
+	uint32_t PreloadHandler::OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo)
+	{
+		Log(wxS("Caught vectored exception:"));
+		LogNoTime(DumpExceptionInformation(exceptionInfo));
+
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	uint32_t PreloadHandler::OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo)
+	{
+		Log(wxS("Caught vectored continue:"));
+		LogNoTime(DumpExceptionInformation(exceptionInfo));
+
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+	kxf::String PreloadHandler::DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const
+	{
+		kxf::String result;
+
+		const auto& context = exceptionInfo.ContextRecord;
+		#if _WIN64
+		result += kxf::String::Format(wxS("ContextRecord: [RAX: %1], [RBX: %2], [RCX: %3], [RDX: %4], [RBP: %5], [RDI: %6], [RIP: %7], ")
+									  wxS("[R08: %8], [R09: %9], [R10: %10], [R11: %11], [R12: %12], [R13: %13], [R14: %14], [R15: %15].\n"),
+									  context->Rax,
+									  context->Rbx,
+									  context->Rcx,
+									  context->Rdx,
+									  context->Rbp,
+									  context->Rdi,
+									  context->Rip,
+									  context->R8,
+									  context->R9,
+									  context->R10,
+									  context->R11,
+									  context->R12,
+									  context->R13,
+									  context->R14,
+									  context->R15
+		);
+		#else
+		result += kxf::String::Format(wxS("ContextRecord: [EAX: %1], [EBX: %2], [ECX: %3], [EDX: %4], [EBP: %5], [EDI: %6], [EIP: %7].\n"),
+									  context->Eax,
+									  context->Ebx,
+									  context->Ecx,
+									  context->Edx,
+									  context->Ebp,
+									  context->Edi,
+									  context->Eip
+		);
+		#endif
+
+		const auto& exception = exceptionInfo.ExceptionRecord;
+		result += kxf::String::Format(wxS("ExceptionRecord:\n\tExceptionCode: [NtStatus: %1 \"%2\"]\n\tExceptionFlags: %3\n\tExceptionAddress: %4\n\tExceptionRecord: %5"),
+									  exception->ExceptionCode, [](kxf::NtStatus status)
+		{
+			kxf::String exceptionCodeMessage = status.GetMessage();
+			exceptionCodeMessage.Replace(wxS('\r'), wxS(' '));
+			exceptionCodeMessage.Replace(wxS('\n'), wxS(' '));
+			exceptionCodeMessage.Trim().Trim(kxf::StringOpFlag::FromEnd);
+
+			return exceptionCodeMessage;
+		}(exception->ExceptionCode),
+									  exception->ExceptionFlags,
+									  exception->ExceptionAddress,
+									  exception->ExceptionRecord
+		);
+
+		return result;
+	}
+
 	PreloadHandler::PreloadHandler()
 	{
 		// Initialize plugins directory
@@ -363,6 +487,10 @@ namespace xSE
 				Log(wxS("Unknown load method, using 'Direct'"));
 				return LoadMethod::Direct;
 			}
+		}();
+		m_LoadDelay = [&]()
+		{
+			return kxf::TimeSpan::Milliseconds(m_Config.QueryElement(wxS("xSE/PluginPreloader/General/LoadDelay")).GetValueInt());
 		}();
 		m_AllowedProcessNames = [&]()
 		{
@@ -430,6 +558,13 @@ namespace xSE
 		if (!m_PluginsLoaded)
 		{
 			Log(wxS("Loading plugins"));
+			if (m_LoadDelay.IsPositive())
+			{
+				Log(wxS("Loading plugins is delayed by '%1' ms, waiting"), m_LoadDelay.GetMilliseconds());
+				::Sleep(m_LoadDelay.GetMilliseconds());
+				Log(wxS("Wait time is out, continuing loading"));
+			}
+
 			DoLoadPlugins();
 			m_PluginsLoaded = true;
 		}

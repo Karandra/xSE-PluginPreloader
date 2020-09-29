@@ -26,6 +26,9 @@
     <ClCompile Include="Source\pch.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\VectoredExceptionHandler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -56,6 +59,9 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Framework.hpp">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\VectoredExceptionHandler.h">
       <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>

@@ -246,6 +246,7 @@ copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)
     <ClInclude Include="Source\ProxyFunctions\IpHlpAPI.h" />
     <ClInclude Include="Source\ProxyFunctions\WinMM.h" />
     <ClInclude Include="Source\ProxyFunctions\X3DAudio17.h" />
+    <ClInclude Include="Source\VectoredExceptionHandler.h" />
     <ClInclude Include="Source\xSEPluginPreloader.h" />
     <ClInclude Include="Source\ScriptExtenderDefinesBase.h" />
   </ItemGroup>
@@ -261,6 +262,7 @@ copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">pch.hpp</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="Source\VectoredExceptionHandler.cpp" />
     <ClCompile Include="Source\xSEPluginPreloader.cpp" />
     <ClCompile Include="Source\xSEPluginPreloaderFunctions.cpp" />
   </ItemGroup>

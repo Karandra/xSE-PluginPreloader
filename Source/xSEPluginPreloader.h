@@ -1,5 +1,6 @@
 #pragma once
 #include "Framework.hpp"
+#include "VectoredExceptionHandler.h"
 #include <kxf/Serialization/XML.h>
 #include <kxf/System/DynamicLibrary.h>
 
@@ -11,13 +12,13 @@ namespace xSE
 		Initialized,
 
 		FailedLoad,
-		FailedInitialize,
+		FailedInitialize
 	};
 
 	enum class LoadMethod
 	{
 		Direct,
-		Delayed,
+		Delayed
 	};
 }
 
@@ -25,10 +26,6 @@ namespace xSE
 {
 	class PreloadHandler final
 	{
-		public:
-			using InitTermFunc = void(__cdecl*)(void*, void*);
-			using tmainCRTStartupFunc = int64_t(__cdecl*)(void);
-
 		public:
 			static kxf::String GetLibraryName();
 			static kxf::String GetLibraryVersion();
@@ -42,8 +39,9 @@ namespace xSE
 			static void** GetFunctions() noexcept;
 		
 		private:
-			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
 			kxf::DynamicLibrary m_OriginalLibrary;
+			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
+			VectoredExceptionHandler m_VectoredExceptionHandler;
 
 			kxf::FSPath m_ExecutablePath;
 			kxf::FSPath m_PluginsDirectory;
@@ -52,12 +50,16 @@ namespace xSE
 
 			kxf::XMLDocument m_Config;
 			kxf::FSPath m_OriginalLibraryPath;
+			kxf::TimeSpan m_LoadDelay;
 			std::vector<kxf::String> m_AllowedProcessNames;
 			LoadMethod m_LoadMethod = LoadMethod::Delayed;
 
 			FILE* m_Log = nullptr;
 
 			#ifdef USE_NUKEM_DETOURS
+			using InitTermFunc = void(__cdecl*)(void*, void*);
+			using tmainCRTStartupFunc = int64_t(__cdecl*)(void);
+
 			InitTermFunc m_initterm_e = nullptr;
 			tmainCRTStartupFunc m_start = nullptr;
 			#endif
@@ -76,6 +78,12 @@ namespace xSE
 			void LoadOriginalLibraryFunctions();
 			void UnloadOriginalLibrary();
 			void ClearOriginalFunctions();
+
+			size_t DoLog(const kxf::String& logString, bool addTimestamp, size_t indent = 0) const;
+
+			uint32_t OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo);
+			uint32_t OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo);
+			kxf::String DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const;
 
 			#ifdef USE_NUKEM_DETOURS
 			void DetourInitFunctions();
@@ -144,16 +152,35 @@ namespace xSE
 				return m_LoadMethod == LoadMethod::Delayed;
 			}
 
-			template<class ...Args>
-			void Log(const kxf::String& format, Args&&... args) const
+			size_t Log(const kxf::String& logString) const
 			{
-				if (m_Log)
-				{
-					kxf::String string = kxf::String::Format(format, std::forward<Args>(args)...);
-					fputws(string.wx_str(), m_Log);
-					fputws(L"\r\n", m_Log);
-					fflush(m_Log);
-				}
+				return DoLog(logString, true);
+			}
+			size_t LogIndent(size_t indent, const kxf::String& logString) const
+			{
+				return DoLog(logString, true, indent);
+			}
+			size_t LogNoTime(const kxf::String& logString) const
+			{
+				return DoLog(logString, false);
+			}
+
+			template<class ...Args>
+			size_t Log(const kxf::String& format, Args&&... args) const
+			{
+				return DoLog(kxf::String::Format(format, std::forward<Args>(args)...), true);
+			}
+
+			template<class ...Args>
+			size_t LogIndent(size_t indent, const kxf::String& format, Args&&... args) const
+			{
+				return DoLog(kxf::String::Format(format, std::forward<Args>(args)...), true, indent);
+			}
+
+			template<class ...Args>
+			size_t LogNoTime(const kxf::String& format, Args&&... args) const
+			{
+				return DoLog(kxf::String::Format(format, std::forward<Args>(args)...), false);
 			}
 	};
 }

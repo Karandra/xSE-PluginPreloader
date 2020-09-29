@@ -15,6 +15,7 @@
 #include <kxf/General/Common.h>
 #include <kxf/General/String.h>
 #include <kxf/General/StringFormatter.h>
+#include <kxf/General/DateTime.h>
 
 #include <kxf/FileSystem/Common.h>
 #include <kxf/FileSystem/FileItem.h>
