@@ -32,6 +32,7 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 			g_ThreadAttachCount++;
 			if (g_ThreadAttachCount == 2 && PreloadHandler::GetInstance().ShouldUseDelayedLoad())
 			{
+				::DisableThreadLibraryCalls(handle);
 				PreloadHandler::GetInstance().LoadPlugins();
 			}
 			break;

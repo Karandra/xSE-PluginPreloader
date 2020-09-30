@@ -1,7 +1,9 @@
 #include "pch.hpp"
 #include "xSEPluginPreloader.h"
+#include "VectoredExceptionHandler.h"
 #include "ScriptExtenderDefinesBase.h"
 #include <kxf/FileSystem/NativeFileSystem.h>
+#include <kxf/IO/StreamReaderWriter.h>
 #include <kxf/System/ShellOperations.h>
 #include <kxf/System/Win32Error.h>
 #include <kxf/System/NtStatus.h>
@@ -32,7 +34,6 @@ namespace
 	using TInitialize = void(__cdecl*)(void);
 	constexpr auto g_ConfigFileName = wxS("xSE PluginPreloader.xml");
 	constexpr auto g_LogFileName = wxS("xSE PluginPreloader.log");
-	constexpr kxf::XChar g_LogIndentBuffer[] = wxS("    ");
 
 	template<class TFunc>
 	__declspec(noinline) uint32_t SEHTryExcept(TFunc&& func)
@@ -138,8 +139,8 @@ namespace xSE
 		Log(wxS("Searching directory '%1' for plugins"), m_PluginsDirectory.GetFullPath());
 
 		// Install exception handler and remove it after loading is done
-		Log(wxS("Installing vectored exception handler"));
-		m_VectoredExceptionHandler.Install([](_EXCEPTION_POINTERS* exceptionInfo) -> LONG
+		VectoredExceptionHandler vectoredExceptionHandler;
+		vectoredExceptionHandler.Install([](_EXCEPTION_POINTERS* exceptionInfo) -> LONG
 		{
 			if (g_Instnace && exceptionInfo)
 			{
@@ -147,16 +148,9 @@ namespace xSE
 			}
 			return EXCEPTION_CONTINUE_SEARCH;
 		}, VectoredExceptionHandler::Mode::ExceptionHandler, VectoredExceptionHandler::Order::First);
-		LogIndent(1, wxS("Installing vectored exception handler: %1"), m_VectoredExceptionHandler.IsInstalled() ? "success" : "failed");
-		kxf::Utility::CallAtScopeExit atExit = [&]()
-		{
-			if (m_VectoredExceptionHandler.IsInstalled())
-			{
-				Log(wxS("Removing vectored exception handler"));
-				m_VectoredExceptionHandler.Remove();
-			}
-		};
+		Log(wxS("Installing vectored exception handler: %1"), vectoredExceptionHandler.IsInstalled() ? "success" : "failed");
 
+		// Begin loading
 		kxf::NativeFileSystem fs;
 		const size_t itemsScanned = fs.EnumItems(m_PluginsDirectory, [&](kxf::FileItem fileItem)
 		{
@@ -172,6 +166,7 @@ namespace xSE
 		}, wxS("*_preload.txt"), kxf::FSActionFlag::LimitToFiles);
 
 		Log(wxS("Loading finished, %1 plugins loaded, %2 items scanned"), m_LoadedLibraries.size(), itemsScanned);
+		Log(wxS("Removing vectored exception handler: %1"), vectoredExceptionHandler.Remove() ? "success" : "failed");
 	}
 	void PreloadHandler::DoUnloadPlugins()
 	{
@@ -334,32 +329,28 @@ namespace xSE
 		std::fill_n(GetFunctions(), GetFunctionsCount(), nullptr);
 	}
 
-	size_t PreloadHandler::DoLog(const kxf::String& logString, bool addTimestamp, size_t indent) const
+	size_t PreloadHandler::DoLog(kxf::String logString, bool addTimestamp, size_t indent) const
 	{
-		if (m_Log && !logString.IsEmptyOrWhitespace())
+		if (m_LogStream && !logString.IsEmptyOrWhitespace())
 		{
-			size_t totalLength = indent * std::size(g_LogIndentBuffer) - 1;
+			kxf::IO::OutputStreamWriter writer(*m_LogStream);
 
+			if (indent != 0)
+			{
+				logString.Prepend(wxS(' '), indent * 4);
+			}
 			if (addTimestamp)
 			{
-				const auto timeStamp = kxf::DateTime::Now();
+				auto timeStamp = kxf::DateTime::Now();
 				kxf::String timeStampFormatted = kxf::StringFormatter::Formatter(wxS("[%1:%2] "))(timeStamp.FormatISOCombined(wxS(' ')))(timeStamp.GetMillisecond(), 3, 10, wxS('0'));
 
-				std::fputws(timeStampFormatted.wx_str(), m_Log);
-				totalLength += timeStampFormatted.length();
+				logString.Prepend(std::move(timeStampFormatted));
 			}
 
-			for (size_t i = 0; i < indent; i++)
-			{
-				std::fputws(g_LogIndentBuffer, m_Log);
-			}
+			writer.WriteStringUTF8(logString.Append(wxS('\n')));
+			m_LogStream->Flush();
 
-			std::fputws(logString.wx_str(), m_Log);
-			std::fputws(wxS("\n"), m_Log);
-			totalLength += logString.length() + 1;
-
-			std::fflush(m_Log);
-			return totalLength;
+			return logString.length();
 		}
 		return 0;
 	}
@@ -441,7 +432,7 @@ namespace xSE
 		m_ExecutablePath = kxf::DynamicLibrary::GetExecutingModule().GetFilePath();
 
 		// Open log
-		_wfopen_s(&m_Log, g_LogFileName, L"wb+");
+		m_LogStream = fileSystem.OpenToWrite(g_LogFileName);
 		Log(wxS("Log opened"));
 		Log(wxS("%1 v%2 loaded"), GetLibraryName(), GetLibraryVersion());
 		Log(wxS("Script Extender platform: %1"), xSE_NAME_W);
@@ -541,10 +532,7 @@ namespace xSE
 		}
 
 		Log(L"Log closed");
-		if (m_Log)
-		{
-			fclose(m_Log);
-		}
+		m_LogStream = nullptr;
 	}
 
 	void PreloadHandler::LoadPlugins()

@@ -1,6 +1,6 @@
 #pragma once
 #include "Framework.hpp"
-#include "VectoredExceptionHandler.h"
+#include <kxf/IO/IStream.h>
 #include <kxf/Serialization/XML.h>
 #include <kxf/System/DynamicLibrary.h>
 
@@ -37,11 +37,10 @@ namespace xSE
 
 			static size_t GetFunctionsCount() noexcept;
 			static void** GetFunctions() noexcept;
-		
+			
 		private:
 			kxf::DynamicLibrary m_OriginalLibrary;
 			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
-			VectoredExceptionHandler m_VectoredExceptionHandler;
 
 			kxf::FSPath m_ExecutablePath;
 			kxf::FSPath m_PluginsDirectory;
@@ -54,7 +53,7 @@ namespace xSE
 			std::vector<kxf::String> m_AllowedProcessNames;
 			LoadMethod m_LoadMethod = LoadMethod::Delayed;
 
-			FILE* m_Log = nullptr;
+			std::unique_ptr<kxf::IOutputStream> m_LogStream;
 
 			#ifdef USE_NUKEM_DETOURS
 			using InitTermFunc = void(__cdecl*)(void*, void*);
@@ -79,7 +78,7 @@ namespace xSE
 			void UnloadOriginalLibrary();
 			void ClearOriginalFunctions();
 
-			size_t DoLog(const kxf::String& logString, bool addTimestamp, size_t indent = 0) const;
+			size_t DoLog(kxf::String logString, bool addTimestamp, size_t indent = 0) const;
 
 			uint32_t OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo);
 			uint32_t OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo);
