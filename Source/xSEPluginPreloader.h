@@ -1,5 +1,6 @@
 #pragma once
 #include "Framework.hpp"
+#include "VectoredExceptionHandler.h"
 #include <kxf/IO/IStream.h>
 #include <kxf/Serialization/XML.h>
 #include <kxf/System/DynamicLibrary.h>
@@ -17,8 +18,52 @@ namespace xSE
 
 	enum class LoadMethod
 	{
-		Direct,
-		Delayed
+		OnProcessAttach,
+		OnThreadAttach,
+		ImportAddressHook,
+	};
+}
+
+namespace xSE::PluginPreloader
+{
+	class OnProcessAttach final
+	{
+	};
+
+	class OnThreadAttach final
+	{
+		public:
+			size_t ThreadNumber = 0;
+	};
+
+	class ImportAddressHook final
+	{
+		private:
+			void(__cdecl* m_UnhookedFunction)(void*, void*) = nullptr;
+
+		public:
+			kxf::String LibraryName;
+			kxf::String FunctionName;
+
+		public:
+			template<class... Args>
+			decltype(auto) CallUnhooked(Args&&... arg) noexcept
+			{
+				return std::invoke(m_UnhookedFunction, std::forward<Args>(arg)...);
+			}
+
+			void* GetUnhooked() const noexcept
+			{
+				return m_UnhookedFunction;
+			}
+			void SaveUnhooked(decltype(m_UnhookedFunction) func) noexcept
+			{
+				m_UnhookedFunction = func;
+			}
+			bool IsHooked() const noexcept
+			{
+				return m_UnhookedFunction != nullptr;
+			}
 	};
 }
 
@@ -39,29 +84,30 @@ namespace xSE
 			static void** GetFunctions() noexcept;
 			
 		private:
+			// General
 			kxf::DynamicLibrary m_OriginalLibrary;
 			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
+			VectoredExceptionHandler m_VectoredExceptionHandler;
 
 			kxf::FSPath m_ExecutablePath;
 			kxf::FSPath m_PluginsDirectory;
-			bool m_PluginsLoadAllowed = false;
 			bool m_PluginsLoaded = false;
+			bool m_PluginsLoadAllowed = false;
 
+			// Config
 			kxf::XMLDocument m_Config;
 			kxf::FSPath m_OriginalLibraryPath;
 			kxf::TimeSpan m_LoadDelay;
+			bool m_KeepExceptionHandler = false;
 			std::vector<kxf::String> m_AllowedProcessNames;
-			LoadMethod m_LoadMethod = LoadMethod::Delayed;
 
+			std::optional<LoadMethod> m_LoadMethod;
+			PluginPreloader::OnProcessAttach m_OnProcessAttach;
+			PluginPreloader::OnThreadAttach m_OnThreadAttach;
+			PluginPreloader::ImportAddressHook m_ImportAddressHook;
+
+			// Log
 			std::unique_ptr<kxf::IOutputStream> m_LogStream;
-
-			#ifdef USE_NUKEM_DETOURS
-			using InitTermFunc = void(__cdecl*)(void*, void*);
-			using tmainCRTStartupFunc = int64_t(__cdecl*)(void);
-
-			InitTermFunc m_initterm_e = nullptr;
-			tmainCRTStartupFunc m_start = nullptr;
-			#endif
 
 		private:
 			kxf::FSPath GetOriginalLibraryPath() const;
@@ -69,10 +115,9 @@ namespace xSE
 
 			void DoLoadPlugins();
 			void DoUnloadPlugins();
-			PluginStatus DoLoadPlugin(const kxf::FSPath& path);
+			PluginStatus DoLoadSinglePlugin(const kxf::FSPath& path);
 
 			bool CheckAllowedProcesses() const;
-
 			void LoadOriginalLibrary();
 			void LoadOriginalLibraryFunctions();
 			void UnloadOriginalLibrary();
@@ -80,56 +125,11 @@ namespace xSE
 
 			size_t DoLog(kxf::String logString, bool addTimestamp, size_t indent = 0) const;
 
-			uint32_t OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo);
+			bool InstallVectoredExceptionHandler();
+			void RemoveVectoredExceptionHandler();
 			uint32_t OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo);
+			uint32_t OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo);
 			kxf::String DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const;
-
-			#ifdef USE_NUKEM_DETOURS
-			void DetourInitFunctions();
-			static void DelayedLoad_InitTrem(void* p1, void* p2)
-			{
-				GetInstance().LoadPlugins();
-				GetInstance().Call_InitTerm(p1, p2);
-			}
-			static int64_t DelayedLoad_start()
-			{
-				GetInstance().LoadPlugins();
-				return GetInstance().Call_start();
-			}
-			void Call_InitTerm(void* p1, void* p2) const
-			{
-				(*m_initterm_e)(p1, p2);
-			}
-			int64_t Call_start() const
-			{
-				return (*m_start)();
-			}
-
-			template<class T>
-			T DetourFunctionIAT(T func, const char* nameDLL, const char* nameFunc) const
-			{
-				uint8_t* base = reinterpret_cast<uint8_t*>(GetModuleHandleW(nullptr));
-				return reinterpret_cast<T>(NukemDetours::DetourIAT(base, reinterpret_cast<uint8_t*>(func), nameDLL, nameFunc));
-			}
-		
-			template<class T>
-			T DetourFunctionBase(HMODULE base, T func, uintptr_t offset) const
-			{
-				return reinterpret_cast<T>(NukemDetours::DetourFunction(reinterpret_cast<uint8_t*>(base) + offset, reinterpret_cast<uint8_t*>(func)));
-			}
-
-			template<class T>
-			T DetourFunctionThis(T func, uintptr_t offset) const
-			{
-				return DetourFunctionBase(GetModuleHandleW(nullptr), func, offset);
-			}
-
-			template<class T>
-			T DetourFunctionCRT(T func, uintptr_t offset) const
-			{
-				return DetourFunctionBase(GetModuleHandleW(L"MSVCR110.dll"), func, offset);
-			}
-			#endif
 
 		public:
 			PreloadHandler();
@@ -138,19 +138,48 @@ namespace xSE
 		public:
 			bool IsNull() const
 			{
-				return m_OriginalLibrary.IsNull();
+				return m_OriginalLibrary.IsNull() || !m_LoadMethod.has_value();
 			}
-			void LoadPlugins();
-
-			bool ShouldUseDirectLoad() const
+			bool HookImportTable();
+			LoadMethod GetLoadMethod() const
 			{
-				return m_LoadMethod == LoadMethod::Direct;
+				return *m_LoadMethod;
 			}
-			bool ShouldUseDelayedLoad() const
+			
+			bool IsPluginsLoaded() const noexcept
 			{
-				return m_LoadMethod == LoadMethod::Delayed;
+				return m_PluginsLoaded;
+			}
+			bool IsPluginsLoadAllowed() const noexcept
+			{
+				return m_PluginsLoadAllowed;
+			}
+			bool LoadPlugins();
+			
+			template<LoadMethod method>
+			const auto& GetLoadMethodOptions() const noexcept
+			{
+				if constexpr(method == LoadMethod::OnProcessAttach)
+				{
+					return m_OnProcessAttach;
+				}
+				else if constexpr(method == LoadMethod::OnThreadAttach)
+				{
+					return m_OnThreadAttach;
+				}
+				else if constexpr(method == LoadMethod::ImportAddressHook)
+				{
+					return m_ImportAddressHook;
+				}
+				else
+				{
+					static_assert(false);
+				}
 			}
 
+			bool DisableThreadLibraryCalls(HMODULE handle);
+
+		public:
 			size_t Log(const kxf::String& logString) const
 			{
 				return DoLog(logString, true);

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xSE>
+	<PluginPreloader>
+		<!--
+			If you have a mod that uses DLL used by the preloader you can rename the DLL from your mod and write
+			its new name here. Empty by default. For example, the preloader uses 'IpHlpAPI.dll' and your mod uses
+			the same DLL. Rename DLL from your mod to something else like 'IpHlpAPI MyMod.dll' and change value to:
+			
+			<OriginalLibrary>IpHlpAPI MyMod.dll</OriginalLibrary>
+		-->
+		<OriginalLibrary/>
+		
+		<!-- Load method for xSE plugins, 'OnProcessAttach' by default. Don't change unless required. -->
+		<LoadMethod Name="OnProcessAttach">
+			<!--
+				Description:
+					Loads plugins inside 'DLLMain' of the preloader DLL when it receives 'DLL_PROCESS_ATTACH' notification.
+					In other words, right after the host process starts. Executing certain kinds of code inside 'DLLMain' is
+					risky (see: https://docs.microsoft.com/ru-ru/windows/win32/dlls/dynamic-link-library-best-practices#general-best-practices)
+					so this method may fail in some cases.
+				
+				Remarks:
+					The preloader calls 'DisableThreadLibraryCalls' when it's done interfacing with 'DLLMain' thread notifications.
+				
+				Parameters:
+					<None>
+			-->
+			<OnProcessAttach/>
+			
+			<!--
+				Description:
+					Same as 'OnProcessAttach' above, but loads plugins after certain number of threads have been created
+					by the host process (inside 'DLL_THREAD_ATTACH' notification). This methods has all the disadvantages
+					of the previous one and it can be triggered too late.
+				
+				Remarks:
+					The method mainly designed for Mod Organizer 2 (MO2) to give some time to its virtual file system to
+					initialize itself, otherwise there will be no plugins to preload id they're installed as MO2 virtual
+					mods.
+				
+				Parameters:
+					- ThreadNumber: Specifies a thread number which will trigger the loading. That is, when the value is '2',
+					the second attached thread will cause the loading process. Negative numbers are not allowed.
+			-->
+			<OnThreadAttach>
+				<ThreadNumber>2</ThreadNumber>
+			</OnThreadAttach>
+			
+			<!--
+				Description:
+					Sets an import table hook for the specified function inside DLL loaded by the host process.
+					When the hook is called, it'll load plugins and then it'll get back to its usual operations.
+					
+					Uses Detours library by Nukem: https://github.com/Nukem9/detours
+					
+				Parameters:
+					- LibraryName: The name of a DLL that contains the function to hook. Function *must* have a signature
+					compatible with 'void(__cdecl*)(void*, void*)'.
+
+					- FunctionName: Name of the function to hook. Must be exported from the DLL pointed by 'LibraryName'.
+			-->
+			<ImportAddressHook>
+				<LibraryName>MSVCR110.dll</LibraryName>
+				<FunctionName>_initterm_e</FunctionName>
+			</ImportAddressHook>
+		</LoadMethod>
+
+		<!--
+			Usually vectored exception handler is installed right before plugins loading and removed after it's done.
+			This option allows to keep it if you need more information in case the host process crashes. 
+		-->
+		<KeepExceptionHandler>false</KeepExceptionHandler>
+
+		<!--
+			Sets the amount of time the preloader will pause the loading thread, in milliseconds. 0 means no delay.
+			Don't change unless you need some time to attach debugger before loading starts, for example.
+		-->
+		<LoadDelay>0</LoadDelay>
+		
+		<!--
+			This block defines a list of processes which are allowed to preload plugins. Only processes in this list
+			with the attribute 'Allow' set to 'true' will be allowed to preload. Name comparison is *not* case-sensitive.
+		-->
+		<Processes>
+			<Item Name="Fallout3.exe" Allow="false"/>
+			<Item Name="FalloutNV.exe" Allow="false"/>
+			<Item Name="Fallout4.exe" Allow="true"/>
+			<Item Name="Fallout4VR.exe" Allow="true"/>
+			
+			<Item Name="Morrowind.exe" Allow="false"/>
+			<Item Name="Oblivion.exe" Allow="false"/>
+			<Item Name="TESV.exe" Allow="false"/>
+			<Item Name="Enderal.exe" Allow="false"/>
+			<Item Name="SkyrimSE.exe" Allow="false"/>
+			<Item Name="SkyrimVR.exe" Allow="false"/>
+			
+			<Item Name="TESConstructionSet.exe" Allow="false"/>
+			<Item Name="CreationKit.exe" Allow="false"/>
+		</Processes>
+	</PluginPreloader>
+</xSE>

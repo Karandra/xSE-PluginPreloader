@@ -21,6 +21,3 @@
 #include <kxf/FileSystem/FileItem.h>
 #include <kxf/FileSystem/FSPath.h>
 #include <kxf/FileSystem/IFileSystem.h>
-
-// xSE PreloadHandler
-//#define USE_NUKEM_DETOURS
