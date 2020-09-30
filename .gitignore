@@ -30,6 +30,7 @@ bld/
 [Jj]unk/
 [Bb]uild/
 ![Bb]uild/xSE PluginPreloader.xml
+Nukem Detours/Solution/*
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
