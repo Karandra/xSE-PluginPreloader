@@ -1,5 +1,10 @@
 *Dates in DD.MM.YYYY*
 
+# Version 0.2.1, 01.10.2020
+- Better logging of configuration file loading.
+- When the config file isn't found or can not be loaded it will be restored to the default one stored inside the DLL file.
+- Many pointers and pointer-like values are logged in hex now (0x12abcdef).
+
 # Version 0.2, 01.10.2020
 - Rewritten using [KxFramework](https://github.com/KerberX/KxFramework).
 - Added more logging and error reporting.

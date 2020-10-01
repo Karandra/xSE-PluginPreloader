@@ -73,7 +73,7 @@ namespace xSE
 	{
 		public:
 			static kxf::String GetLibraryName();
-			static kxf::String GetLibraryVersion();
+			static kxf::Version GetLibraryVersion();
 
 			static PreloadHandler& CreateInstnace();
 			static void DestroyInstnace();

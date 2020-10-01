@@ -2,9 +2,9 @@
 <xSE>
 	<PluginPreloader>
 		<!--
-			If you have a mod that uses DLL used by the preloader you can rename the DLL from your mod and write
+			If you have a mod that uses the same DLL as the preloader, you can rename the DLL from your mod and set
 			its new name here. Empty by default. For example, the preloader uses 'IpHlpAPI.dll' and your mod uses
-			the same DLL. Rename DLL from your mod to something else like 'IpHlpAPI MyMod.dll' and change value to:
+			the same DLL. Rename the DLL from your mod to something else like 'IpHlpAPI MyMod.dll' and the option to:
 			
 			<OriginalLibrary>IpHlpAPI MyMod.dll</OriginalLibrary>
 		-->
@@ -40,7 +40,7 @@
 				
 				Parameters:
 					- ThreadNumber: Specifies a thread number which will trigger the loading. That is, when the value is '2',
-					the second attached thread will cause the loading process. Negative numbers are not allowed.
+					the second attached thread will trigger the loading process. Negative numbers are not allowed.
 			-->
 			<OnThreadAttach>
 				<ThreadNumber>2</ThreadNumber>
@@ -54,10 +54,10 @@
 					Uses Detours library by Nukem: https://github.com/Nukem9/detours
 					
 				Parameters:
-					- LibraryName: The name of a DLL that contains the function to hook. Function *must* have a signature
-					compatible with 'void(__cdecl*)(void*, void*)'.
+					- LibraryName: The name of a DLL that contains the function to hook.
 
 					- FunctionName: Name of the function to hook. Must be exported from the DLL pointed by 'LibraryName'.
+					Function *must* have a signature compatible with 'void(__cdecl*)(void*, void*)'.
 			-->
 			<ImportAddressHook>
 				<LibraryName>MSVCR110.dll</LibraryName>

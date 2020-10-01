@@ -1,11 +1,13 @@
 #include "pch.hpp"
 #include "xSEPluginPreloader.h"
 #include "ScriptExtenderDefinesBase.h"
+#include "resource.h"
 #include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/IO/StreamReaderWriter.h>
 #include <kxf/System/ShellOperations.h>
 #include <kxf/System/Win32Error.h>
 #include <kxf/System/NtStatus.h>
+#include <kxf/Utility/System.h>
 #include <kxf/Utility/Container.h>
 #include <kxf/Utility/CallAtScopeExit.h>
 
@@ -157,9 +159,9 @@ namespace xSE
 	{
 		return wxS("xSE PluginPreloader");
 	}
-	kxf::String PreloadHandler::GetLibraryVersion()
+	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return wxS("0.2");
+		return wxS("0.2.1");
 	}
 
 	PreloadHandler& PreloadHandler::CreateInstnace()
@@ -326,7 +328,7 @@ namespace xSE
 			}
 			else
 			{
-				return wxS("\t<none>");
+				return wxS("<none>");
 			}
 		}());
 
@@ -410,7 +412,7 @@ namespace xSE
 	}
 	void PreloadHandler::RemoveVectoredExceptionHandler()
 	{
-		Log(wxS("Removing vectored exception handler: %1"), m_VectoredExceptionHandler.Remove() ? "success" : "failed (or already removed)");
+		Log(wxS("Removing vectored exception handler: %1"), m_VectoredExceptionHandler.Remove() ? "success" : "failed (not installed or already removed)");
 	}
 	uint32_t PreloadHandler::OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo)
 	{
@@ -428,55 +430,59 @@ namespace xSE
 	}
 	kxf::String PreloadHandler::DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const
 	{
+		using kxf::StringFormatter::Formatter;
+		constexpr int fieldWidth = sizeof(void*);
+		constexpr int intBase = 16;
+		constexpr kxf::XChar intFillChar = wxS('0');
+
 		kxf::String result;
 
 		const auto& context = exceptionInfo.ContextRecord;
 		#if _WIN64
-		result += kxf::String::Format(wxS("ContextRecord: [RAX: %1], [RBX: %2], [RCX: %3], [RDX: %4], [RBP: %5], [RDI: %6], [RIP: %7], ")
-									  wxS("[R08: %8], [R09: %9], [R10: %10], [R11: %11], [R12: %12], [R13: %13], [R14: %14], [R15: %15].\n"),
-									  context->Rax,
-									  context->Rbx,
-									  context->Rcx,
-									  context->Rdx,
-									  context->Rbp,
-									  context->Rdi,
-									  context->Rip,
-									  context->R8,
-									  context->R9,
-									  context->R10,
-									  context->R11,
-									  context->R12,
-									  context->R13,
-									  context->R14,
-									  context->R15
-		);
+		result += Formatter(wxS("ContextRecord: [RAX: 0x%1], [RBX: 0x%2], [RCX: 0x%3], [RDX: 0x%4], [RBP: 0x%5], [RDI: 0x%6], [RIP: 0x%7], ")
+							wxS("[R08: 0x%8], [R09: 0x%9], [R10: 0x%10], [R11: 0x%11], [R12: 0x%12], [R13: 0x%13], [R14: 0x%14], [R15: 0x%15].\n"))
+			(context->Rax, fieldWidth, intBase, intFillChar)
+			(context->Rbx, fieldWidth, intBase, intFillChar)
+			(context->Rcx, fieldWidth, intBase, intFillChar)
+			(context->Rdx, fieldWidth, intBase, intFillChar)
+			(context->Rbp, fieldWidth, intBase, intFillChar)
+			(context->Rdi, fieldWidth, intBase, intFillChar)
+			(context->Rip, fieldWidth, intBase, intFillChar)
+			(context->R8, fieldWidth, intBase, intFillChar)
+			(context->R9, fieldWidth, intBase, intFillChar)
+			(context->R10, fieldWidth, intBase, intFillChar)
+			(context->R11, fieldWidth, intBase, intFillChar)
+			(context->R12, fieldWidth, intBase, intFillChar)
+			(context->R13, fieldWidth, intBase, intFillChar)
+			(context->R14, fieldWidth, intBase, intFillChar)
+			(context->R15, fieldWidth, intBase, intFillChar).ToString();
 		#else
-		result += kxf::String::Format(wxS("ContextRecord: [EAX: %1], [EBX: %2], [ECX: %3], [EDX: %4], [EBP: %5], [EDI: %6], [EIP: %7].\n"),
-									  context->Eax,
-									  context->Ebx,
-									  context->Ecx,
-									  context->Edx,
-									  context->Ebp,
-									  context->Edi,
-									  context->Eip
-		);
+		result += Formatter(wxS("ContextRecord: [EAX: 0x%1], [EBX: 0x%2], [ECX: 0x%3], [EDX: 0x%4], [EBP: 0x%5], [EDI: 0x%6], [EIP: 0x%7].\n"))
+			(context->Eax, fieldWidth, intBase, intFillChar)
+			(context->Ebx, fieldWidth, intBase, intFillChar)
+			(context->Ecx, fieldWidth, intBase, intFillChar)
+			(context->Edx, fieldWidth, intBase, intFillChar)
+			(context->Ebp, fieldWidth, intBase, intFillChar)
+			(context->Edi, fieldWidth, intBase, intFillChar)
+			(context->Eip, fieldWidth, intBase, intFillChar).ToString();
 		#endif
 
 		const auto& exception = exceptionInfo.ExceptionRecord;
-		result += kxf::String::Format(wxS("ExceptionRecord:\n\tExceptionCode: [NtStatus: (%1) '%2']\n\tExceptionFlags: %3\n\tExceptionAddress: %4\n\tExceptionRecord: %5"),
-									  exception->ExceptionCode, [](kxf::NtStatus status)
-		{
-			kxf::String exceptionCodeMessage = status.GetMessage();
-			exceptionCodeMessage.Replace(wxS('\r'), wxS(' '));
-			exceptionCodeMessage.Replace(wxS('\n'), wxS(' '));
-			exceptionCodeMessage.Trim().Trim(kxf::StringOpFlag::FromEnd);
+		result += Formatter(wxS("ExceptionRecord:\n\tExceptionCode: [NtStatus: (0x%1) '%2']\n\tExceptionFlags: 0x%3\n\tExceptionAddress: 0x%4\n\tExceptionRecord: 0x%5"))
+			(exception->ExceptionCode, fieldWidth, intBase, intFillChar)
+			([](kxf::NtStatus status)
+			{
+				kxf::String exceptionCodeMessage = status.GetMessage();
+				exceptionCodeMessage.Replace(wxS("\r\n"), wxS("; "));
+				exceptionCodeMessage.Replace(wxS("\r"), wxS("; "));
+				exceptionCodeMessage.Replace(wxS("\n"), wxS("; "));
+				exceptionCodeMessage.Trim().Trim(kxf::StringOpFlag::FromEnd);
 
-			return exceptionCodeMessage;
-		}(exception->ExceptionCode),
-									  exception->ExceptionFlags,
-									  exception->ExceptionAddress,
-									  exception->ExceptionRecord
-		);
+				return exceptionCodeMessage;
+		}(exception->ExceptionCode))
+			(exception->ExceptionFlags, fieldWidth, intBase, intFillChar)
+			(exception->ExceptionAddress)
+			(exception->ExceptionRecord).ToString();
 
 		return result;
 	}
@@ -491,17 +497,52 @@ namespace xSE
 		// Open log
 		m_LogStream = fileSystem.OpenToWrite(g_LogFileName);
 		Log(wxS("Log opened"));
-		Log(wxS("%1 v%2 loaded"), GetLibraryName(), GetLibraryVersion());
+		Log(wxS("%1 v%2 loaded"), GetLibraryName(), GetLibraryVersion().ToString());
 		Log(wxS("Script Extender platform: %1"), xSE_NAME_W);
 
 		// Load config
-		if (auto stream = fileSystem.OpenToRead(g_ConfigFileName))
+		Log(wxS("Loading configuration from '%1'"), fileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
+		if (auto readStream = fileSystem.OpenToRead(g_ConfigFileName); readStream && m_Config.Load(*readStream))
 		{
-			m_Config.Load(*stream);
+			LogIndent(1, wxS("Configuration file successfully loaded"));
 		}
 		else
 		{
-			Log(wxS("Couldn't load configuration from '%1', default configuration will be used"), fileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
+			//MessageBoxA(nullptr, __FUNCSIG__, nullptr, MB_OK);
+			if (readStream)
+			{
+				LogIndent(1, wxS("Couldn't load configuration. The file is found, but can not be loaded, default configuration will be used"));
+			}
+			else
+			{
+				auto lastError = kxf::Win32Error::GetLastError();
+				LogIndent(1, wxS("Couldn't load configuration file: [Win32: '%1' (%2)], default configuration will be used"), lastError.GetMessage(), lastError.GetValue());
+			}
+			readStream = nullptr;
+
+			// Restore the default config on disk and load it
+			Log(wxS("Restoring default configuration"));
+
+			auto defaultXML = kxf::Utility::LoadResource(kxf::DynamicLibrary::GetCurrentModule(), IDR_XML_DEFAULT_CONFIGURATION, wxS("XML"));
+			if (m_Config.Load(kxf::StringViewOf(defaultXML)))
+			{
+				LogIndent(1, wxS("Default configuration successfully loaded"));
+
+				auto writeStream = fileSystem.OpenToWrite(g_ConfigFileName);
+				if (writeStream && writeStream->WriteAll(defaultXML.data(), defaultXML.length()))
+				{
+					LogIndent(1, wxS("Default configuration successfully saved to disk"));
+				}
+				else
+				{
+					auto lastError = kxf::Win32Error::GetLastError();
+					LogIndent(1, wxS("Couldn't save default configuration to disk: [Win32: '%1' (%2)]"), lastError.GetMessage(), lastError.GetValue());
+				}
+			}
+			else
+			{
+				LogIndent(1, wxS("Couldn't load default configuration"));
+			}
 		}
 
 		m_OriginalLibraryPath = [&]()
@@ -596,7 +637,7 @@ namespace xSE
 		m_PluginsLoadAllowed = CheckAllowedProcesses();
 		if (!m_PluginsLoadAllowed)
 		{
-			Log(wxS("This process '%1' is not allowed to preload plugins"), m_ExecutablePath.GetName());
+			Log(wxS("<%1> This process is not allowed to preload plugins"), m_ExecutablePath.GetName());
 		}
 
 		// Load the original library
@@ -691,9 +732,9 @@ namespace xSE
 			Log(wxS("Loading plugins"));
 			if (m_LoadDelay.IsPositive())
 			{
-				Log(wxS("Loading plugins is delayed by '%1' ms, waiting"), m_LoadDelay.GetMilliseconds());
+				Log(wxS("<LoadDelay> Loading plugins is delayed by '%1' ms, waiting"), m_LoadDelay.GetMilliseconds());
 				::Sleep(m_LoadDelay.GetMilliseconds());
-				Log(wxS("Wait time is out, continuing loading"));
+				Log(wxS("<LoadDelay> Wait time is out, continuing loading"));
 			}
 
 			DoLoadPlugins();
