@@ -75,8 +75,8 @@ namespace xSE
 			static kxf::String GetLibraryName();
 			static kxf::Version GetLibraryVersion();
 
-			static PreloadHandler& CreateInstnace();
-			static void DestroyInstnace();
+			static PreloadHandler& CreateInstance();
+			static void DestroyInstance();
 			static PreloadHandler& GetInstance();
 			static bool HasInstance();
 

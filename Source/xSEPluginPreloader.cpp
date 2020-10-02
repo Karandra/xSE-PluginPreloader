@@ -152,7 +152,6 @@ namespace Detour
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
 namespace xSE
 {
 	kxf::String PreloadHandler::GetLibraryName()
@@ -164,7 +163,7 @@ namespace xSE
 		return wxS("0.2.1");
 	}
 
-	PreloadHandler& PreloadHandler::CreateInstnace()
+	PreloadHandler& PreloadHandler::CreateInstance()
 	{
 		if (!g_Instance)
 		{
@@ -172,7 +171,7 @@ namespace xSE
 		}
 		return *g_Instance;
 	}
-	void PreloadHandler::DestroyInstnace()
+	void PreloadHandler::DestroyInstance()
 	{
 		g_Instance = nullptr;
 	}

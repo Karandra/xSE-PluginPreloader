@@ -15,7 +15,7 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 	{
 		case DLL_PROCESS_ATTACH:
 		{
-			PreloadHandler& handler = PreloadHandler::CreateInstnace();
+			PreloadHandler& handler = PreloadHandler::CreateInstance();
 			if (handler.IsNull())
 			{
 				handler.Log(wxS("Invalid state of PreloadHandler reported. Terminating process."));
@@ -67,7 +67,7 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 		}
 		case DLL_PROCESS_DETACH:
 		{
-			PreloadHandler::DestroyInstnace();
+			PreloadHandler::DestroyInstance();
 			break;
 		}
 	};
