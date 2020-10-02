@@ -30,7 +30,7 @@ using NukemDetoursOpt = Detours::X86Option;
 
 namespace
 {
-	std::unique_ptr<xSE::PreloadHandler> g_Instnace;
+	std::unique_ptr<xSE::PreloadHandler> g_Instance;
 
 	constexpr auto g_ConfigFileName = wxS("xSE PluginPreloader.xml");
 	constexpr auto g_LogFileName = wxS("xSE PluginPreloader.log");
@@ -57,27 +57,27 @@ namespace
 		{
 			case PluginStatus::Loaded:
 			{
-				g_Instnace->LogIndent(1, wxS("<%1> Plugin loaded successfully"), path.GetName());
+				g_Instance->LogIndent(1, wxS("<%1> Plugin loaded successfully"), path.GetName());
 				break;
 			}
 			case PluginStatus::Initialized:
 			{
-				g_Instnace->LogIndent(1, wxS("<%1> Plugin 'loaded successfully, 'Initialize' executed successfully"), path.GetName());
+				g_Instance->LogIndent(1, wxS("<%1> Plugin 'loaded successfully, 'Initialize' executed successfully"), path.GetName());
 				break;
 			}
 			case PluginStatus::FailedLoad:
 			{
-				g_Instnace->LogIndent(1, wxS("<%1> Plugin failed to load"), path.GetName());
+				g_Instance->LogIndent(1, wxS("<%1> Plugin failed to load"), path.GetName());
 				break;
 			}
 			case PluginStatus::FailedInitialize:
 			{
-				g_Instnace->LogIndent(1, wxS("<%1> Plugin failed to load. Exception was thrown during 'Initialize' execution"), path.GetName());
+				g_Instance->LogIndent(1, wxS("<%1> Plugin failed to load. Exception was thrown during 'Initialize' execution"), path.GetName());
 				break;
 			}
 			default:
 			{
-				g_Instnace->LogIndent(1, wxS("<%1> Unknown plugin status code (%2)"), path.GetName(), static_cast<uint32_t>(status));
+				g_Instance->LogIndent(1, wxS("<%1> Unknown plugin status code (%2)"), path.GetName(), static_cast<uint32_t>(status));
 				break;
 			}
 		};
@@ -166,23 +166,23 @@ namespace xSE
 
 	PreloadHandler& PreloadHandler::CreateInstnace()
 	{
-		if (!g_Instnace)
+		if (!g_Instance)
 		{
-			g_Instnace = std::make_unique<xSE::PreloadHandler>();
+			g_Instance = std::make_unique<xSE::PreloadHandler>();
 		}
-		return *g_Instnace;
+		return *g_Instance;
 	}
 	void PreloadHandler::DestroyInstnace()
 	{
-		g_Instnace = nullptr;
+		g_Instance = nullptr;
 	}
 	PreloadHandler& PreloadHandler::GetInstance()
 	{
-		return *g_Instnace;
+		return *g_Instance;
 	}
 	bool PreloadHandler::HasInstance()
 	{
-		return g_Instnace != nullptr;
+		return g_Instance != nullptr;
 	}
 
 	kxf::FSPath PreloadHandler::GetOriginalLibraryPath() const
@@ -400,9 +400,9 @@ namespace xSE
 	{
 		m_VectoredExceptionHandler.Install([](_EXCEPTION_POINTERS* exceptionInfo) -> LONG
 		{
-			if (g_Instnace && exceptionInfo)
+			if (g_Instance && exceptionInfo)
 			{
-				return g_Instnace->OnVectoredException(*exceptionInfo);
+				return g_Instance->OnVectoredException(*exceptionInfo);
 			}
 			return EXCEPTION_CONTINUE_SEARCH;
 		}, VectoredExceptionHandler::Mode::ExceptionHandler, VectoredExceptionHandler::Order::First);
@@ -678,31 +678,31 @@ namespace xSE
 		{
 			static void HookFunc(void* a1, void* a2)
 			{
-				if (!g_Instnace->IsPluginsLoaded())
+				if (!g_Instance->IsPluginsLoaded())
 				{
-					g_Instnace->Log(wxS("<ImportAddressHook> LoadPlugins"));
-					g_Instnace->LoadPlugins();
+					g_Instance->Log(wxS("<ImportAddressHook> LoadPlugins"));
+					g_Instance->LoadPlugins();
 				}
 
-				g_Instnace->Log(wxS("<ImportAddressHook> Calling unhooked function"));
+				g_Instance->Log(wxS("<ImportAddressHook> Calling unhooked function"));
 				const kxf::NtStatus status = SEHTryExcept([&]()
 				{
-					g_Instnace->m_ImportAddressHook.CallUnhooked(a1, a2);
+					g_Instance->m_ImportAddressHook.CallUnhooked(a1, a2);
 				});
 
 				if (status)
 				{
-					g_Instnace->Log(wxS("<ImportAddressHook> Unhooked function returned successfully"));
+					g_Instance->Log(wxS("<ImportAddressHook> Unhooked function returned successfully"));
 				}
 				else
 				{
-					g_Instnace->Log(wxS("<ImportAddressHook> Exception occurred: [NtStatus: '%1' (%2)]"), status.GetMessage(), status.GetValue());
+					g_Instance->Log(wxS("<ImportAddressHook> Exception occurred: [NtStatus: '%1' (%2)]"), status.GetMessage(), status.GetValue());
 				}
 
 				// Remove exception handler if needed
-				if (!g_Instnace->m_KeepExceptionHandler)
+				if (!g_Instance->m_KeepExceptionHandler)
 				{
-					g_Instnace->RemoveVectoredExceptionHandler();
+					g_Instance->RemoveVectoredExceptionHandler();
 				}
 			}
 		};
