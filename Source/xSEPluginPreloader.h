@@ -2,6 +2,7 @@
 #include "Framework.hpp"
 #include "VectoredExceptionHandler.h"
 #include <kxf/IO/IStream.h>
+#include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/Serialization/XML.h>
 #include <kxf/System/DynamicLibrary.h>
 
@@ -85,6 +86,7 @@ namespace xSE
 			
 		private:
 			// General
+			kxf::NativeFileSystem m_FileSystem;
 			kxf::DynamicLibrary m_OriginalLibrary;
 			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
 			VectoredExceptionHandler m_VectoredExceptionHandler;
@@ -130,6 +132,9 @@ namespace xSE
 			uint32_t OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo);
 			uint32_t OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo);
 			kxf::String DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const;
+
+			void LogHostProcessInfo() const;
+			void LogScriptExtenderInfo() const;
 
 		public:
 			PreloadHandler();

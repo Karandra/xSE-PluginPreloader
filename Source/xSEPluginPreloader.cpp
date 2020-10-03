@@ -2,8 +2,8 @@
 #include "xSEPluginPreloader.h"
 #include "ScriptExtenderDefinesBase.h"
 #include "resource.h"
-#include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/IO/StreamReaderWriter.h>
+#include <kxf/System/ExecutableVersionResource.h>
 #include <kxf/System/ShellOperations.h>
 #include <kxf/System/Win32Error.h>
 #include <kxf/System/NtStatus.h>
@@ -216,8 +216,7 @@ namespace xSE
 		// Begin loading
 		Log(wxS("Searching directory '%1' for plugins"), m_PluginsDirectory.GetFullPath());
 
-		kxf::NativeFileSystem fs;
-		const size_t itemsScanned = fs.EnumItems(m_PluginsDirectory, [&](kxf::FileItem fileItem)
+		const size_t itemsScanned = m_FileSystem.EnumItems(m_PluginsDirectory, [&](kxf::FileItem fileItem)
 		{
 			if (fileItem.IsNormalItem())
 			{
@@ -486,28 +485,61 @@ namespace xSE
 		return result;
 	}
 
+	void PreloadHandler::LogScriptExtenderInfo() const
+	{
+		const kxf::FSPath loaderPath = m_FileSystem.ResolvePath(xSE_FOLDER_NAME_W wxS("_Loader.exe"));
+		Log(wxS("<Script Extender> Platform: %1"), xSE_NAME_W);
+		Log(wxS("<Script Extender> Binary: %1"), loaderPath.GetFullPath());
+
+		const kxf::ExecutableVersionResource resourceInfo(loaderPath);
+		if (resourceInfo)
+		{
+			Log(wxS("<Script Extender> Version: %1"), resourceInfo.GetAnyVersion());
+		}
+		else
+		{
+			auto lastError = kxf::Win32Error::GetLastError();
+			Log(wxS("<Script Extender> Couldn't load xSE binary, probably %1 is not installed. [Win32: '%2' (%3)]"), xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
+		}
+	}
+	void PreloadHandler::LogHostProcessInfo() const
+	{
+		Log(wxS("<Host process> Binary: %1"), m_ExecutablePath.GetFullPath());
+
+		const kxf::ExecutableVersionResource resourceInfo(m_ExecutablePath);
+		if (resourceInfo)
+		{
+			Log(wxS("<Host process> Version: %1"), resourceInfo.GetAnyVersion());
+		}
+		else
+		{
+			auto lastError = kxf::Win32Error::GetLastError();
+			Log(wxS("<Host process> Couldn't load host process binary. [Win32: '%1' (%2)]"), lastError.GetMessage(), lastError.GetValue());
+		}
+	}
+
 	PreloadHandler::PreloadHandler()
+		:m_FileSystem(kxf::NativeFileSystem::GetExecutableDirectory())
 	{
 		// Initialize plugins directory
-		kxf::NativeFileSystem fileSystem(kxf::NativeFileSystem::GetExecutableDirectory());
-		m_PluginsDirectory = fileSystem.GetCurrentDirectory() / "Data" / xSE_FOLDER_NAME_W / "Plugins";
+		m_PluginsDirectory = m_FileSystem.GetCurrentDirectory() / "Data" / xSE_FOLDER_NAME_W / "Plugins";
 		m_ExecutablePath = kxf::DynamicLibrary::GetExecutingModule().GetFilePath();
 
 		// Open log
-		m_LogStream = fileSystem.OpenToWrite(g_LogFileName);
+		m_LogStream = m_FileSystem.OpenToWrite(g_LogFileName);
 		Log(wxS("Log opened"));
 		Log(wxS("%1 v%2 loaded"), GetLibraryName(), GetLibraryVersion().ToString());
-		Log(wxS("Script Extender platform: %1"), xSE_NAME_W);
+		LogHostProcessInfo();
+		LogScriptExtenderInfo();
 
 		// Load config
-		Log(wxS("Loading configuration from '%1'"), fileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
-		if (auto readStream = fileSystem.OpenToRead(g_ConfigFileName); readStream && m_Config.Load(*readStream))
+		Log(wxS("Loading configuration from '%1'"), m_FileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
+		if (auto readStream = m_FileSystem.OpenToRead(g_ConfigFileName); readStream && m_Config.Load(*readStream))
 		{
 			LogIndent(1, wxS("Configuration file successfully loaded"));
 		}
 		else
 		{
-			//MessageBoxA(nullptr, __FUNCSIG__, nullptr, MB_OK);
 			if (readStream)
 			{
 				LogIndent(1, wxS("Couldn't load configuration. The file is found, but can not be loaded, default configuration will be used"));
@@ -527,7 +559,7 @@ namespace xSE
 			{
 				LogIndent(1, wxS("Default configuration successfully loaded"));
 
-				auto writeStream = fileSystem.OpenToWrite(g_ConfigFileName);
+				auto writeStream = m_FileSystem.OpenToWrite(g_ConfigFileName);
 				if (writeStream && writeStream->WriteAll(defaultXML.data(), defaultXML.length()))
 				{
 					LogIndent(1, wxS("Default configuration successfully saved to disk"));
