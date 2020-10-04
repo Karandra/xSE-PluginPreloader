@@ -638,7 +638,7 @@ namespace xSE
 			}
 			else
 			{
-				Log(wxS("Unknown load method"));
+				Log(wxS("Unknown load method: '%1'"), methodName);
 				return {};
 			}
 		}();
