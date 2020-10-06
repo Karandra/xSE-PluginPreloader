@@ -1,5 +1,9 @@
 *Dates in DD.MM.YYYY*
 
+# Version 0.2.2, 06.10.2020
+- Fixed bug with loading configuration from XML file (see: https://github.com/KerberX/KxFramework/commit/b563edc50e19587c1b9730bddb7465ad09be5ff9).
+- Added logging of the system version and some other environment information.
+
 # Version 0.2.1, 01.10.2020
 - Better logging of configuration file loading.
 - When the config file isn't found or can not be loaded it will be restored to the default one stored inside the DLL file.

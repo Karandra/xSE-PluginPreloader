@@ -3,13 +3,16 @@
 #include "ScriptExtenderDefinesBase.h"
 #include "resource.h"
 #include <kxf/IO/StreamReaderWriter.h>
+#include <kxf/Localization/Locale.h>
 #include <kxf/System/ExecutableVersionResource.h>
+#include <kxf/System/SystemInformation.h>
 #include <kxf/System/ShellOperations.h>
 #include <kxf/System/Win32Error.h>
 #include <kxf/System/NtStatus.h>
 #include <kxf/Utility/System.h>
 #include <kxf/Utility/Container.h>
 #include <kxf/Utility/CallAtScopeExit.h>
+#include <wx/module.h>
 
 #include "Nukem Detours/Detours.h"
 #if _WIN64
@@ -160,7 +163,7 @@ namespace xSE
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return wxS("0.2.1");
+		return wxS("0.2.2");
 	}
 
 	PreloadHandler& PreloadHandler::CreateInstance()
@@ -306,7 +309,7 @@ namespace xSE
 	bool PreloadHandler::CheckAllowedProcesses() const
 	{
 		const kxf::String thisExecutableName = m_ExecutablePath.GetName();
-		Log(wxS("<%1> Checking process name to determine if it's allowed to preload plugins. Following process names are allowed: %2"), thisExecutableName, [&]() -> kxf::String
+		Log(wxS("<%1> Checking process name to determine if it's allowed to preload plugins. Following process names are allowed: [%2]"), thisExecutableName, [&]() -> kxf::String
 		{
 			if (!m_AllowedProcessNames.empty())
 			{
@@ -318,9 +321,9 @@ namespace xSE
 						result += wxS(", ");
 					}
 
-					result += wxS('[');
+					result += wxS('\'');
 					result += name;
-					result += wxS(']');
+					result += wxS('\'');
 				}
 				return result;
 			}
@@ -485,26 +488,42 @@ namespace xSE
 		return result;
 	}
 
-	void PreloadHandler::LogScriptExtenderInfo() const
+	void PreloadHandler::LogEnvironemntInfo() const
 	{
-		const kxf::FSPath loaderPath = m_FileSystem.ResolvePath(xSE_FOLDER_NAME_W wxS("_Loader.exe"));
-		Log(wxS("<Script Extender> Platform: %1"), xSE_NAME_W);
-		Log(wxS("<Script Extender> Binary: %1"), loaderPath.GetFullPath());
-
-		const kxf::ExecutableVersionResource resourceInfo(loaderPath);
-		if (resourceInfo)
+		if (const auto versionInfo = kxf::System::GetVersionInfo())
 		{
-			Log(wxS("<Script Extender> Version: %1"), resourceInfo.GetAnyVersion());
+			const kxf::System::KernelVersion kernel = versionInfo->Kernel;
+			const bool is64Bit = kxf::System::Is64Bit();
+			Log(wxS("<Environemnt> Operation system: '%1' %2.%3.%4"), kxf::System::GetProductName(*versionInfo, is64Bit), kernel.Major, kernel.Minor, kernel.Build);
+
+			if (kernel.ServicePackMajor > 0)
+			{
+				Log(wxS("<Environemnt> System service pack: '%1' %2.%3"), versionInfo->ServicePack, kernel.ServicePackMajor, kernel.ServicePackMinor);
+			}
+			else
+			{
+				Log(wxS("<Environemnt> System service pack: <not applicable>"));
+			}
+			Log(wxS("<Environemnt> System product type: %1"), kxf::ToInt(versionInfo->ProductType));
 		}
 		else
 		{
-			auto lastError = kxf::Win32Error::GetLastError();
-			Log(wxS("<Script Extender> Couldn't load xSE binary, probably %1 is not installed. [Win32: '%2' (%3)]"), xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
+			Log(wxS("<Environemnt> Couldn't query system version"));
 		}
+
+		Log(wxS("<Environemnt> System default locale: '%1'"), kxf::Locale::GetSystemDefault().GetName());
+		Log(wxS("<Environemnt> System preferred locale: '%1'"), kxf::Locale::GetSystemPreferred().GetName());
+	}
+	void PreloadHandler::LogCurrentModuleInfo() const
+	{
+		auto currentModule = kxf::DynamicLibrary::GetCurrentModule();
+
+		Log(wxS("<Current module> Binary: '%1'"), currentModule.GetFilePath().GetFullPath());
+		Log(wxS("<Current module> %1 v%2 loaded"), GetLibraryName(), GetLibraryVersion().ToString());
 	}
 	void PreloadHandler::LogHostProcessInfo() const
 	{
-		Log(wxS("<Host process> Binary: %1"), m_ExecutablePath.GetFullPath());
+		Log(wxS("<Host process> Binary: '%1'"), m_ExecutablePath.GetFullPath());
 
 		const kxf::ExecutableVersionResource resourceInfo(m_ExecutablePath);
 		if (resourceInfo)
@@ -515,6 +534,23 @@ namespace xSE
 		{
 			auto lastError = kxf::Win32Error::GetLastError();
 			Log(wxS("<Host process> Couldn't load host process binary. [Win32: '%1' (%2)]"), lastError.GetMessage(), lastError.GetValue());
+		}
+	}
+	void PreloadHandler::LogScriptExtenderInfo() const
+	{
+		const kxf::FSPath loaderPath = m_FileSystem.ResolvePath(xSE_FOLDER_NAME_W wxS("_Loader.exe"));
+		Log(wxS("<Script Extender> Platform: %1"), xSE_NAME_W);
+		Log(wxS("<Script Extender> Binary: '%1'"), loaderPath.GetFullPath());
+
+		const kxf::ExecutableVersionResource resourceInfo(loaderPath);
+		if (resourceInfo)
+		{
+			Log(wxS("<Script Extender> Version: %1"), resourceInfo.GetAnyVersion());
+		}
+		else
+		{
+			auto lastError = kxf::Win32Error::GetLastError();
+			Log(wxS("<Script Extender> Couldn't load %1 binary, probably not installed. [Win32: '%2' (%3)]"), xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
 		}
 	}
 
@@ -528,9 +564,18 @@ namespace xSE
 		// Open log
 		m_LogStream = m_FileSystem.OpenToWrite(g_LogFileName);
 		Log(wxS("Log opened"));
-		Log(wxS("%1 v%2 loaded"), GetLibraryName(), GetLibraryVersion().ToString());
+
+		Log(wxS("Initializing framework"));
+		wxModule::RegisterModules();
+		if (!wxModule::InitializeModules())
+		{
+			LogIndent(1, wxS("Initializing framework: failed"));
+		}
+
+		LogCurrentModuleInfo();
 		LogHostProcessInfo();
 		LogScriptExtenderInfo();
+		LogEnvironemntInfo();
 
 		// Load config
 		Log(wxS("Loading configuration from '%1'"), m_FileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
@@ -620,7 +665,6 @@ namespace xSE
 						m_OnThreadAttach.ThreadNumber = static_cast<size_t>(value);
 
 						LogIndent(1, wxS("ThreadNumber = %1"), m_OnThreadAttach.ThreadNumber);
-
 						break;
 					}
 					case LoadMethod::ImportAddressHook:

@@ -133,6 +133,8 @@ namespace xSE
 			uint32_t OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo);
 			kxf::String DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const;
 
+			void LogEnvironemntInfo() const;
+			void LogCurrentModuleInfo() const;
 			void LogHostProcessInfo() const;
 			void LogScriptExtenderInfo() const;
 
