@@ -1,5 +1,8 @@
 *Dates in DD.MM.YYYY*
 
+# Version 0.2.3, 07.10.2020
+- Fixed warning message box about missing `DComp.dll` on Windows 7.
+
 # Version 0.2.2, 06.10.2020
 - Fixed bug with loading configuration from XML file (see: https://github.com/KerberX/KxFramework/commit/b563edc50e19587c1b9730bddb7465ad09be5ff9).
 - Added logging of the system version and some other environment information.

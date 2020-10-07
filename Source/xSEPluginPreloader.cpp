@@ -3,6 +3,7 @@
 #include "ScriptExtenderDefinesBase.h"
 #include "resource.h"
 #include <kxf/IO/StreamReaderWriter.h>
+#include <kxf/Log/Common.h>
 #include <kxf/Localization/Locale.h>
 #include <kxf/System/ExecutableVersionResource.h>
 #include <kxf/System/SystemInformation.h>
@@ -163,7 +164,7 @@ namespace xSE
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return wxS("0.2.2");
+		return wxS("0.2.3");
 	}
 
 	PreloadHandler& PreloadHandler::CreateInstance()
@@ -488,6 +489,50 @@ namespace xSE
 		return result;
 	}
 
+	bool PreloadHandler::InitializeFramework()
+	{
+		Log(wxS("Initializing framework"));
+
+		// Disable asserts as they're not useful here
+		wxLog::DontCreateOnDemand();
+		kxf::Log::EnableAsserts(false);
+
+		// Redirect the framework log to our own log file
+		if (m_LogStream)
+		{
+			class LogTarget final: public wxLog
+			{
+				private:
+					PreloadHandler& m_Instance;
+
+				protected:
+					void DoLogRecord(wxLogLevel level, const wxString& message, const wxLogRecordInfo& info) override
+					{
+						m_Instance.Log(wxS("<Framework> %1"), message);
+					}
+
+				public:
+					LogTarget(PreloadHandler& instance)
+						:m_Instance(instance)
+					{
+					}
+			};
+			kxf::Log::SetActiveTarget(std::make_unique<LogTarget>(*this));
+		}
+		else
+		{
+			kxf::Log::Enable(false);
+		}
+
+		// Register modules
+		wxModule::RegisterModules();
+		if (!wxModule::InitializeModules())
+		{
+			LogIndent(1, wxS("Initializing framework: failed"));
+			return false;
+		}
+		return true;
+	}
 	void PreloadHandler::LogEnvironemntInfo() const
 	{
 		if (const auto versionInfo = kxf::System::GetVersionInfo())
@@ -550,7 +595,7 @@ namespace xSE
 		else
 		{
 			auto lastError = kxf::Win32Error::GetLastError();
-			Log(wxS("<Script Extender> Couldn't load %1 binary, probably not installed. [Win32: '%2' (%3)]"), xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
+			Log(wxS("<Script Extender> Couldn't load %1 binary, probably not installed: [Win32: '%2' (%3)]"), xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
 		}
 	}
 
@@ -565,13 +610,8 @@ namespace xSE
 		m_LogStream = m_FileSystem.OpenToWrite(g_LogFileName);
 		Log(wxS("Log opened"));
 
-		Log(wxS("Initializing framework"));
-		wxModule::RegisterModules();
-		if (!wxModule::InitializeModules())
-		{
-			LogIndent(1, wxS("Initializing framework: failed"));
-		}
-
+		// Init framework
+		InitializeFramework();
 		LogCurrentModuleInfo();
 		LogHostProcessInfo();
 		LogScriptExtenderInfo();
@@ -735,7 +775,10 @@ namespace xSE
 		}
 		RemoveVectoredExceptionHandler();
 
+		// Close the log
 		Log(L"Log closed");
+		kxf::Log::SetActiveTarget(nullptr);
+		kxf::Log::Enable(false);
 		m_LogStream = nullptr;
 	}
 

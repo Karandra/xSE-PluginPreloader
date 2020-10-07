@@ -2,9 +2,9 @@
 #include "Framework.hpp"
 #include "VectoredExceptionHandler.h"
 #include <kxf/IO/IStream.h>
+#include <kxf/System/DynamicLibrary.h>
 #include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/Serialization/XML.h>
-#include <kxf/System/DynamicLibrary.h>
 
 namespace xSE
 {
@@ -133,6 +133,7 @@ namespace xSE
 			uint32_t OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo);
 			kxf::String DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const;
 
+			bool InitializeFramework();
 			void LogEnvironemntInfo() const;
 			void LogCurrentModuleInfo() const;
 			void LogHostProcessInfo() const;
