@@ -134,7 +134,7 @@ namespace xSE
 			kxf::String DumpExceptionInformation(const _EXCEPTION_POINTERS& exceptionInfo) const;
 
 			bool InitializeFramework();
-			void LogEnvironemntInfo() const;
+			void LogEnvironmentInfo() const;
 			void LogCurrentModuleInfo() const;
 			void LogHostProcessInfo() const;
 			void LogScriptExtenderInfo() const;

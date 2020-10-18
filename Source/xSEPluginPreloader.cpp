@@ -533,31 +533,31 @@ namespace xSE
 		}
 		return true;
 	}
-	void PreloadHandler::LogEnvironemntInfo() const
+	void PreloadHandler::LogEnvironmentInfo() const
 	{
 		if (const auto versionInfo = kxf::System::GetVersionInfo())
 		{
 			const kxf::System::KernelVersion kernel = versionInfo->Kernel;
 			const bool is64Bit = kxf::System::Is64Bit();
-			Log(wxS("<Environemnt> Operation system: '%1' %2.%3.%4"), kxf::System::GetProductName(*versionInfo, is64Bit), kernel.Major, kernel.Minor, kernel.Build);
+			Log(wxS("<Environment> Operation system: '%1' %2.%3.%4"), kxf::System::GetProductName(*versionInfo, is64Bit), kernel.Major, kernel.Minor, kernel.Build);
 
 			if (kernel.ServicePackMajor > 0)
 			{
-				Log(wxS("<Environemnt> System service pack: '%1' %2.%3"), versionInfo->ServicePack, kernel.ServicePackMajor, kernel.ServicePackMinor);
+				Log(wxS("<Environment> System service pack: '%1' %2.%3"), versionInfo->ServicePack, kernel.ServicePackMajor, kernel.ServicePackMinor);
 			}
 			else
 			{
-				Log(wxS("<Environemnt> System service pack: <not applicable>"));
+				Log(wxS("<Environment> System service pack: <not applicable>"));
 			}
-			Log(wxS("<Environemnt> System product type: %1"), kxf::ToInt(versionInfo->ProductType));
+			Log(wxS("<Environment> System product type: %1"), kxf::ToInt(versionInfo->ProductType));
 		}
 		else
 		{
-			Log(wxS("<Environemnt> Couldn't query system version"));
+			Log(wxS("<Environment> Couldn't query system version"));
 		}
 
-		Log(wxS("<Environemnt> System default locale: '%1'"), kxf::Locale::GetSystemDefault().GetName());
-		Log(wxS("<Environemnt> System preferred locale: '%1'"), kxf::Locale::GetSystemPreferred().GetName());
+		Log(wxS("<Environment> System default locale: '%1'"), kxf::Locale::GetSystemDefault().GetName());
+		Log(wxS("<Environment> System preferred locale: '%1'"), kxf::Locale::GetSystemPreferred().GetName());
 	}
 	void PreloadHandler::LogCurrentModuleInfo() const
 	{
@@ -615,7 +615,7 @@ namespace xSE
 		LogCurrentModuleInfo();
 		LogHostProcessInfo();
 		LogScriptExtenderInfo();
-		LogEnvironemntInfo();
+		LogEnvironmentInfo();
 
 		// Load config
 		Log(wxS("Loading configuration from '%1'"), m_FileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
