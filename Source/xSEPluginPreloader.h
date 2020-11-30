@@ -83,7 +83,7 @@ namespace xSE
 
 			static size_t GetFunctionsCount() noexcept;
 			static void** GetFunctions() noexcept;
-			
+
 		private:
 			// General
 			kxf::NativeFileSystem m_FileSystem;
@@ -118,6 +118,7 @@ namespace xSE
 			void DoLoadPlugins();
 			void DoUnloadPlugins();
 			PluginStatus DoLoadSinglePlugin(const kxf::FSPath& path);
+			void OnPluginLoadFailed(const kxf::FSPath& path, size_t logIndentOffset = 0);
 
 			bool CheckAllowedProcesses() const;
 			void LoadOriginalLibrary();
@@ -153,7 +154,7 @@ namespace xSE
 			{
 				return *m_LoadMethod;
 			}
-			
+
 			bool IsPluginsLoaded() const noexcept
 			{
 				return m_PluginsLoaded;
@@ -163,7 +164,7 @@ namespace xSE
 				return m_PluginsLoadAllowed;
 			}
 			bool LoadPlugins();
-			
+
 			template<LoadMethod method>
 			const auto& GetLoadMethodOptions() const noexcept
 			{

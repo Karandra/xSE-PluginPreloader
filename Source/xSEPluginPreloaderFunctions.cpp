@@ -65,7 +65,7 @@ API name()	\
 //////////////////////////////////////////////////////////////////////////
 // Loading and stubs
 //////////////////////////////////////////////////////////////////////////
-#define LoadOriginalFunc(enumName, name)	g_OriginalFunctions[xSE::PluginPreloader::Library::enumName::name] = m_OriginalLibrary.GetFunctionAddress(#name)
+#define LoadOriginalFunc(enumName, name)	g_OriginalFunctions[xSE::PluginPreloader::Library::enumName::name] = m_OriginalLibrary.GetExportedFunctionAddress(#name)
 
 namespace xSE
 {

@@ -86,7 +86,7 @@ namespace
 			}
 		};
 	}
-	
+
 	std::optional<xSE::LoadMethod> LoadMethodFromString(const kxf::String& name)
 	{
 		using namespace xSE;
@@ -164,7 +164,7 @@ namespace xSE
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return wxS("0.2.3");
+		return wxS("0.2.4");
 	}
 
 	PreloadHandler& PreloadHandler::CreateInstance()
@@ -258,6 +258,8 @@ namespace xSE
 			{
 				auto lastError = kxf::Win32Error::GetLastError();
 				LogIndent(1, wxS("<%1> Couldn't load plugin: [Win32: '%2' (%3)]"), path.GetName(), lastError.GetMessage(), lastError.GetValue());
+
+				OnPluginLoadFailed(path);
 			}
 		});
 
@@ -271,7 +273,7 @@ namespace xSE
 				const kxf::NtStatus initializeStatus = SEHTryExcept([&]()
 				{
 					using TInitialize = void(__cdecl*)(void);
-					if (auto initalize = pluginLibrary.GetFunction<TInitialize>("Initialize"))
+					if (auto initalize = pluginLibrary.GetExportedFunction<TInitialize>("Initialize"))
 					{
 						LogIndent(1, wxS("<%1> Calling the initialization routine"), path.GetName());
 						std::invoke(*initalize);
@@ -291,6 +293,8 @@ namespace xSE
 				{
 					pluginStatus = PluginStatus::FailedInitialize;
 					LogIndent(1, wxS("<%1> Exception occurred inside plugin's initialization routine: [NtStatus: '%2' (%3)]"), path.GetName(), initializeStatus.GetMessage(), initializeStatus.GetValue());
+
+					OnPluginLoadFailed(path);
 				}
 			}
 			else
@@ -302,9 +306,56 @@ namespace xSE
 		{
 			pluginStatus = PluginStatus::FailedLoad;
 			LogIndent(1, wxS("<%1> Exception occurred while loading plugin library: [NtStatus: '%2' (%3)]"), path.GetName(), loadStatus.GetMessage(), loadStatus.GetValue());
+
+			OnPluginLoadFailed(path);
 		}
 
 		return pluginStatus;
+	}
+	void PreloadHandler::OnPluginLoadFailed(const kxf::FSPath& path, size_t logIndentOffset)
+	{
+		const kxf::NtStatus status = SEHTryExcept([&]()
+		{
+			LogIndent(logIndentOffset + 1, wxS("<%1> Trying to read library dependencies list"), path.GetName());
+
+			kxf::DynamicLibrary library(path, kxf::DynamicLibraryFlag::Resource);
+			if (library)
+			{
+				LogIndent(logIndentOffset + 1, wxS("<%1> Dependency module names:"), path.GetName());
+				library.EnumDependencyModuleNames([&](kxf::String moduleName)
+				{
+					kxf::DynamicLibrary dependencyModule(moduleName, kxf::DynamicLibraryFlag::Resource);
+					if (dependencyModule)
+					{
+						LogIndent(logIndentOffset + 2, wxS("<%1> Module name '%2' loaded successfully as a resource from '%3'"), path.GetName(), moduleName, dependencyModule.GetFilePath().GetFullPath());
+					}
+					else
+					{
+						LogIndent(logIndentOffset + 2, wxS("<%1> Module name '%2' couldn't be loaded"), path.GetName(), moduleName);
+
+						auto lastError = kxf::Win32Error::GetLastError();
+						LogIndent(logIndentOffset + 3, wxS("<%1> Couldn't load the dependency library as a resource: [Win32: '%2' (%3)]"), moduleName, lastError.GetMessage(), lastError.GetValue());
+
+						// Try to look for recursive dependencies if the file exists but couldn't be loaded
+						if (lastError != ERROR_FILE_NOT_FOUND && lastError != ERROR_PATH_NOT_FOUND)
+						{
+							OnPluginLoadFailed(moduleName, logIndentOffset + 2);
+						}
+					}
+					return true;
+				});
+			}
+			else
+			{
+				auto lastError = kxf::Win32Error::GetLastError();
+				LogIndent(logIndentOffset + 1, wxS("<%1> Couldn't load the library as a resource for diagnostics: [Win32: '%2' (%3)]"), path.GetName(), lastError.GetMessage(), lastError.GetValue());
+			}
+		});
+
+		if (!status)
+		{
+			LogIndent(logIndentOffset + 1, wxS("<%1> Exception occurred while scanning plugin library dependencies: [NtStatus: '%2' (%3)]"), path.GetName(), status.GetMessage(), status.GetValue());
+		}
 	}
 
 	bool PreloadHandler::CheckAllowedProcesses() const
