@@ -596,10 +596,6 @@ namespace xSE
 			{
 				Log(wxS("<Environment> System service pack: '%1' %2.%3"), versionInfo->ServicePack, kernel.ServicePackMajor, kernel.ServicePackMinor);
 			}
-			else
-			{
-				Log(wxS("<Environment> System service pack: <not applicable>"));
-			}
 			Log(wxS("<Environment> System product type: %1"), kxf::ToInt(versionInfo->ProductType));
 		}
 		else
