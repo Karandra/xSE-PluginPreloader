@@ -1,5 +1,9 @@
 *Dates in DD.MM.YYYY*
 
+# Version 0.2.4, 30.11.2020
+- Added DLL load time dependencies diagnostics when plugin failed to load.
+- Removed service pack logging for systems where it's not applicable (Win10).
+
 # Version 0.2.3, 07.10.2020
 - Fixed warning message box about missing `DComp.dll` on Windows 7.
 
