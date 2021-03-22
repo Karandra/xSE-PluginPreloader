@@ -1,298 +1,303 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="F4SE|Win32">
-      <Configuration>F4SE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="F4SE|x64">
-      <Configuration>F4SE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="NVSE|Win32">
-      <Configuration>NVSE</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="NVSE|x64">
-      <Configuration>NVSE</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{D8462034-E42F-47A3-863E-E6BC7252C178}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace>GenericDLLPreloader</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
-    <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>IpHlpAPI</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
-    <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>WinMM</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
-    <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>IpHlpAPI</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
-    <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>WinMM</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
-    <VcpkgConfiguration>Release</VcpkgConfiguration>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
-    <VcpkgConfiguration>Release</VcpkgConfiguration>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
-    <VcpkgConfiguration>Release</VcpkgConfiguration>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
-    <VcpkgConfiguration>Release</VcpkgConfiguration>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);WIN32;NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <ExceptionHandling>Sync</ExceptionHandling>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>Exports\F4SE.def</ModuleDefinitionFile>
-    </Link>
-    <PostBuildEvent>
-      <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
-copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);WIN32;NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <ExceptionHandling>Sync</ExceptionHandling>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>Exports\NVSE.def</ModuleDefinitionFile>
-    </Link>
-    <PostBuildEvent>
-      <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
-copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <ExceptionHandling>Sync</ExceptionHandling>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>Exports\F4SE.def</ModuleDefinitionFile>
-    </Link>
-    <PostBuildEvent>
-      <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
-copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AssemblerOutput>NoListing</AssemblerOutput>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <ExceptionHandling>Sync</ExceptionHandling>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
-      <ModuleDefinitionFile>Exports\NVSE.def</ModuleDefinitionFile>
-    </Link>
-    <PostBuildEvent>
-      <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
-copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
-copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="Source\Framework.hpp" />
-    <ClInclude Include="Source\pch.hpp" />
-    <ClInclude Include="Source\ProxyFunctions\bink2w64.h" />
-    <ClInclude Include="Source\ProxyFunctions\DInput8.h" />
-    <ClInclude Include="Source\ProxyFunctions\IpHlpAPI.h" />
-    <ClInclude Include="Source\ProxyFunctions\WinMM.h" />
-    <ClInclude Include="Source\ProxyFunctions\X3DAudio17.h" />
-    <ClInclude Include="Source\VectoredExceptionHandler.h" />
-    <ClInclude Include="Source\xSEPluginPreloader.h" />
-    <ClInclude Include="Source\ScriptExtenderDefinesBase.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Source\DLLMain.cpp" />
-    <ClCompile Include="Source\pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">pch.hpp</PrecompiledHeaderFile>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">pch.hpp</PrecompiledHeaderFile>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">pch.hpp</PrecompiledHeaderFile>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">pch.hpp</PrecompiledHeaderFile>
-    </ClCompile>
-    <ClCompile Include="Source\VectoredExceptionHandler.cpp" />
-    <ClCompile Include="Source\xSEPluginPreloader.cpp" />
-    <ClCompile Include="Source\xSEPluginPreloaderFunctions.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="Source\UnconditionalJump.asm">
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">false</ExcludedFromBuild>
-    </MASM>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="xSE PluginPreloader.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="Build\xSE PluginPreloader.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ChangeLog.md" />
-    <None Include="Exports\F4SE.def" />
-    <None Include="Exports\NVSE.def" />
-    <None Include="README.md" />
-  </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
-  </ImportGroup>
+	<ItemGroup Label="ProjectConfigurations">
+		<ProjectConfiguration Include="F4SE|Win32">
+			<Configuration>F4SE</Configuration>
+			<Platform>Win32</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="F4SE|x64">
+			<Configuration>F4SE</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="NVSE|Win32">
+			<Configuration>NVSE</Configuration>
+			<Platform>Win32</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="NVSE|x64">
+			<Configuration>NVSE</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+	</ItemGroup>
+	<PropertyGroup Label="Globals">
+		<VCProjectVersion>15.0</VCProjectVersion>
+		<ProjectGuid>{D8462034-E42F-47A3-863E-E6BC7252C178}</ProjectGuid>
+		<Keyword>Win32Proj</Keyword>
+		<RootNamespace>GenericDLLPreloader</RootNamespace>
+		<WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+	</PropertyGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'" Label="Configuration">
+		<ConfigurationType>DynamicLibrary</ConfigurationType>
+		<UseDebugLibraries>false</UseDebugLibraries>
+		<PlatformToolset>v142</PlatformToolset>
+		<WholeProgramOptimization>true</WholeProgramOptimization>
+		<CharacterSet>Unicode</CharacterSet>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'" Label="Configuration">
+		<ConfigurationType>DynamicLibrary</ConfigurationType>
+		<UseDebugLibraries>false</UseDebugLibraries>
+		<PlatformToolset>v142</PlatformToolset>
+		<WholeProgramOptimization>true</WholeProgramOptimization>
+		<CharacterSet>Unicode</CharacterSet>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'" Label="Configuration">
+		<ConfigurationType>DynamicLibrary</ConfigurationType>
+		<UseDebugLibraries>false</UseDebugLibraries>
+		<PlatformToolset>v142</PlatformToolset>
+		<WholeProgramOptimization>true</WholeProgramOptimization>
+		<CharacterSet>Unicode</CharacterSet>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'" Label="Configuration">
+		<ConfigurationType>DynamicLibrary</ConfigurationType>
+		<UseDebugLibraries>false</UseDebugLibraries>
+		<PlatformToolset>v142</PlatformToolset>
+		<WholeProgramOptimization>true</WholeProgramOptimization>
+		<CharacterSet>Unicode</CharacterSet>
+	</PropertyGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+	<ImportGroup Label="ExtensionSettings">
+		<Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props"/>
+	</ImportGroup>
+	<ImportGroup Label="Shared">
+	</ImportGroup>
+	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
+		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+	</ImportGroup>
+	<ImportGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'" Label="PropertySheets">
+		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+	</ImportGroup>
+	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
+		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+	</ImportGroup>
+	<ImportGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'" Label="PropertySheets">
+		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+	</ImportGroup>
+	<PropertyGroup Label="UserMacros"/>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
+		<LinkIncremental>false</LinkIncremental>
+		<IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
+		<OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
+		<TargetName>IpHlpAPI</TargetName>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
+		<LinkIncremental>false</LinkIncremental>
+		<IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
+		<OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
+		<TargetName>WinMM</TargetName>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
+		<LinkIncremental>false</LinkIncremental>
+		<IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
+		<OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
+		<TargetName>IpHlpAPI</TargetName>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
+		<LinkIncremental>false</LinkIncremental>
+		<IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
+		<OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
+		<TargetName>WinMM</TargetName>
+	</PropertyGroup>
+	<PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
+		<VcpkgConfiguration>Release</VcpkgConfiguration>
+	</PropertyGroup>
+	<PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
+		<VcpkgConfiguration>Release</VcpkgConfiguration>
+	</PropertyGroup>
+	<PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
+		<VcpkgConfiguration>Release</VcpkgConfiguration>
+	</PropertyGroup>
+	<PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
+		<VcpkgConfiguration>Release</VcpkgConfiguration>
+	</PropertyGroup>
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<PreprocessorDefinitions>KXF_STATIC_LIBRARY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		</ClCompile>
+	</ItemDefinitionGroup>
+	<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">
+		<ClCompile>
+			<PrecompiledHeader>Use</PrecompiledHeader>
+			<WarningLevel>Level3</WarningLevel>
+			<Optimization>MaxSpeed</Optimization>
+			<FunctionLevelLinking>true</FunctionLevelLinking>
+			<IntrinsicFunctions>true</IntrinsicFunctions>
+			<SDLCheck>true</SDLCheck>
+			<PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);WIN32;NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<ConformanceMode>true</ConformanceMode>
+			<AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<LanguageStandard>stdcpp17</LanguageStandard>
+			<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+			<AssemblerOutput>NoListing</AssemblerOutput>
+			<MultiProcessorCompilation>true</MultiProcessorCompilation>
+			<ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+			<PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+			<ExceptionHandling>Sync</ExceptionHandling>
+		</ClCompile>
+		<Link>
+			<SubSystem>Windows</SubSystem>
+			<EnableCOMDATFolding>true</EnableCOMDATFolding>
+			<OptimizeReferences>true</OptimizeReferences>
+			<GenerateDebugInformation>true</GenerateDebugInformation>
+			<AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+			<ModuleDefinitionFile>Exports\F4SE.def</ModuleDefinitionFile>
+		</Link>
+		<PostBuildEvent>
+			<Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
+				copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+				copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
+		</PostBuildEvent>
+	</ItemDefinitionGroup>
+	<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
+		<ClCompile>
+			<PrecompiledHeader>Use</PrecompiledHeader>
+			<WarningLevel>Level3</WarningLevel>
+			<Optimization>MaxSpeed</Optimization>
+			<FunctionLevelLinking>true</FunctionLevelLinking>
+			<IntrinsicFunctions>true</IntrinsicFunctions>
+			<SDLCheck>true</SDLCheck>
+			<PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);WIN32;NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<ConformanceMode>true</ConformanceMode>
+			<AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<LanguageStandard>stdcpp17</LanguageStandard>
+			<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+			<AssemblerOutput>NoListing</AssemblerOutput>
+			<MultiProcessorCompilation>true</MultiProcessorCompilation>
+			<ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+			<PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+			<ExceptionHandling>Sync</ExceptionHandling>
+		</ClCompile>
+		<Link>
+			<SubSystem>Windows</SubSystem>
+			<EnableCOMDATFolding>true</EnableCOMDATFolding>
+			<OptimizeReferences>true</OptimizeReferences>
+			<GenerateDebugInformation>true</GenerateDebugInformation>
+			<AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+			<ModuleDefinitionFile>Exports\NVSE.def</ModuleDefinitionFile>
+		</Link>
+		<PostBuildEvent>
+			<Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
+				copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+				copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
+		</PostBuildEvent>
+	</ItemDefinitionGroup>
+	<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">
+		<ClCompile>
+			<PrecompiledHeader>Use</PrecompiledHeader>
+			<WarningLevel>Level3</WarningLevel>
+			<Optimization>MaxSpeed</Optimization>
+			<FunctionLevelLinking>true</FunctionLevelLinking>
+			<IntrinsicFunctions>true</IntrinsicFunctions>
+			<SDLCheck>true</SDLCheck>
+			<PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<ConformanceMode>true</ConformanceMode>
+			<AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<LanguageStandard>stdcpp17</LanguageStandard>
+			<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+			<AssemblerOutput>NoListing</AssemblerOutput>
+			<MultiProcessorCompilation>true</MultiProcessorCompilation>
+			<ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+			<PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+			<ExceptionHandling>Sync</ExceptionHandling>
+		</ClCompile>
+		<Link>
+			<SubSystem>Windows</SubSystem>
+			<EnableCOMDATFolding>true</EnableCOMDATFolding>
+			<OptimizeReferences>true</OptimizeReferences>
+			<GenerateDebugInformation>true</GenerateDebugInformation>
+			<AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+			<ModuleDefinitionFile>Exports\F4SE.def</ModuleDefinitionFile>
+		</Link>
+		<PostBuildEvent>
+			<Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
+				copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+				copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
+		</PostBuildEvent>
+	</ItemDefinitionGroup>
+	<ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
+		<ClCompile>
+			<PrecompiledHeader>Use</PrecompiledHeader>
+			<WarningLevel>Level3</WarningLevel>
+			<Optimization>MaxSpeed</Optimization>
+			<FunctionLevelLinking>true</FunctionLevelLinking>
+			<IntrinsicFunctions>true</IntrinsicFunctions>
+			<SDLCheck>true</SDLCheck>
+			<PreprocessorDefinitions>xSE_PLATFORM_$(Configuration);NDEBUG;GENERICDLLPRELOADER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<ConformanceMode>true</ConformanceMode>
+			<AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<LanguageStandard>stdcpp17</LanguageStandard>
+			<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+			<AssemblerOutput>NoListing</AssemblerOutput>
+			<MultiProcessorCompilation>true</MultiProcessorCompilation>
+			<ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+			<PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+			<ExceptionHandling>Sync</ExceptionHandling>
+		</ClCompile>
+		<Link>
+			<SubSystem>Windows</SubSystem>
+			<EnableCOMDATFolding>true</EnableCOMDATFolding>
+			<OptimizeReferences>true</OptimizeReferences>
+			<GenerateDebugInformation>true</GenerateDebugInformation>
+			<AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
+			<ModuleDefinitionFile>Exports\NVSE.def</ModuleDefinitionFile>
+		</Link>
+		<PostBuildEvent>
+			<Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
+				copy "$(TargetPath)" "$(ProjectDir)Bin\$(Configuration)\$(TargetName)$(TargetExt)"
+				copy "$(ProjectDir)Build\$(SolutionName).xml" "$(ProjectDir)Bin\$(Configuration)\$(SolutionName).xml"</Command>
+		</PostBuildEvent>
+	</ItemDefinitionGroup>
+	<ItemGroup>
+		<ClInclude Include="resource.h"/>
+		<ClInclude Include="Source\Framework.hpp"/>
+		<ClInclude Include="Source\pch.hpp"/>
+		<ClInclude Include="Source\ProxyFunctions\bink2w64.h"/>
+		<ClInclude Include="Source\ProxyFunctions\DInput8.h"/>
+		<ClInclude Include="Source\ProxyFunctions\IpHlpAPI.h"/>
+		<ClInclude Include="Source\ProxyFunctions\WinMM.h"/>
+		<ClInclude Include="Source\ProxyFunctions\X3DAudio17.h"/>
+		<ClInclude Include="Source\VectoredExceptionHandler.h"/>
+		<ClInclude Include="Source\xSEPluginPreloader.h"/>
+		<ClInclude Include="Source\ScriptExtenderDefinesBase.h"/>
+	</ItemGroup>
+	<ItemGroup>
+		<ClCompile Include="Source\DLLMain.cpp"/>
+		<ClCompile Include="Source\pch.cpp">
+			<PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">Create</PrecompiledHeader>
+			<PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">pch.hpp</PrecompiledHeaderFile>
+			<PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">Create</PrecompiledHeader>
+			<PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">pch.hpp</PrecompiledHeaderFile>
+			<PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">Create</PrecompiledHeader>
+			<PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">pch.hpp</PrecompiledHeaderFile>
+			<PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">Create</PrecompiledHeader>
+			<PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">pch.hpp</PrecompiledHeaderFile>
+		</ClCompile>
+		<ClCompile Include="Source\VectoredExceptionHandler.cpp"/>
+		<ClCompile Include="Source\xSEPluginPreloader.cpp"/>
+		<ClCompile Include="Source\xSEPluginPreloaderFunctions.cpp"/>
+	</ItemGroup>
+	<ItemGroup>
+		<MASM Include="Source\UnconditionalJump.asm">
+			<FileType>Document</FileType>
+			<ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='F4SE|Win32'">true</ExcludedFromBuild>
+			<ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">true</ExcludedFromBuild>
+			<ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='F4SE|x64'">false</ExcludedFromBuild>
+			<ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">false</ExcludedFromBuild>
+		</MASM>
+	</ItemGroup>
+	<ItemGroup>
+		<ResourceCompile Include="xSE PluginPreloader.rc"/>
+	</ItemGroup>
+	<ItemGroup>
+		<Xml Include="Build\xSE PluginPreloader.xml"/>
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="ChangeLog.md"/>
+		<None Include="Exports\F4SE.def"/>
+		<None Include="Exports\NVSE.def"/>
+		<None Include="README.md"/>
+	</ItemGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+	<ImportGroup Label="ExtensionTargets">
+		<Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets"/>
+	</ImportGroup>
 </Project>

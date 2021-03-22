@@ -12,7 +12,7 @@
 #include <kxf/System/NtStatus.h>
 #include <kxf/Utility/System.h>
 #include <kxf/Utility/Container.h>
-#include <kxf/Utility/CallAtScopeExit.h>
+#include <kxf/Utility/ScopeGuard.h>
 #include <wx/module.h>
 
 #include "Nukem Detours/Detours.h"
@@ -209,7 +209,7 @@ namespace xSE
 	{
 		// Install exception handler and remove it after loading is done
 		InstallVectoredExceptionHandler();
-		kxf::Utility::CallAtScopeExit atExit = [&]()
+		kxf::Utility::ScopeGuard atExit = [&]()
 		{
 			if (!m_KeepExceptionHandler && *m_LoadMethod != LoadMethod::ImportAddressHook)
 			{
@@ -220,8 +220,10 @@ namespace xSE
 		// Begin loading
 		Log(wxS("Searching directory '%1' for plugins"), m_PluginsDirectory.GetFullPath());
 
-		const size_t itemsScanned = m_FileSystem.EnumItems(m_PluginsDirectory, [&](kxf::FileItem fileItem)
+		size_t itemsScanned = 0;
+		for (const kxf::FileItem& fileItem: m_FileSystem.EnumItems(m_PluginsDirectory, wxS("*_preload.txt"), kxf::FSActionFlag::LimitToFiles))
 		{
+			itemsScanned++;
 			if (fileItem.IsNormalItem())
 			{
 				const kxf::FSPath libraryPath = m_PluginsDirectory / fileItem.GetName().BeforeLast(wxS('_')) + wxS(".dll");
@@ -230,8 +232,7 @@ namespace xSE
 				PluginStatus status = DoLoadSinglePlugin(libraryPath);
 				LogLoadStatus(libraryPath, status);
 			}
-			return true;
-		}, wxS("*_preload.txt"), kxf::FSActionFlag::LimitToFiles);
+		}
 
 		Log(wxS("Loading finished, %1 plugins loaded, %2 items scanned"), m_LoadedLibraries.size(), itemsScanned);
 	}
@@ -647,10 +648,10 @@ namespace xSE
 	}
 
 	PreloadHandler::PreloadHandler()
-		:m_FileSystem(kxf::NativeFileSystem::GetExecutableDirectory())
+		:m_FileSystem(kxf::NativeFileSystem::GetExecutingModuleRootDirectory())
 	{
 		// Initialize plugins directory
-		m_PluginsDirectory = m_FileSystem.GetCurrentDirectory() / "Data" / xSE_FOLDER_NAME_W / "Plugins";
+		m_PluginsDirectory = m_FileSystem.GetLookupDirectory() / "Data" / xSE_FOLDER_NAME_W / "Plugins";
 		m_ExecutablePath = kxf::DynamicLibrary::GetExecutingModule().GetFilePath();
 
 		// Open log
@@ -780,7 +781,7 @@ namespace xSE
 		m_AllowedProcessNames = [&]()
 		{
 			std::vector<kxf::String> processes;
-			m_Config.QueryElement(wxS("xSE/PluginPreloader/Processes")).EnumChildElements([&](kxf::XMLNode itemNode)
+			for (const kxf::XMLNode& itemNode: m_Config.QueryElement(wxS("xSE/PluginPreloader/Processes")).EnumChildElements(wxS("Item")))
 			{
 				if (itemNode.GetAttributeBool(wxS("Allow")))
 				{
@@ -789,9 +790,7 @@ namespace xSE
 						processes.pop_back();
 					}
 				}
-				return true;
-			}, wxS("Item"));
-
+			}
 			return processes;
 		}();
 
