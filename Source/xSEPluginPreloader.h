@@ -205,19 +205,19 @@ namespace xSE
 			template<class ...Args>
 			size_t Log(const kxf::String& format, Args&&... args) const
 			{
-				return DoLog(kxf::String::Format(format, std::forward<Args>(args)...), true);
+				return DoLog(kxf::Format(format, std::forward<Args>(args)...), true);
 			}
 
 			template<class ...Args>
 			size_t LogIndent(size_t indent, const kxf::String& format, Args&&... args) const
 			{
-				return DoLog(kxf::String::Format(format, std::forward<Args>(args)...), true, indent);
+				return DoLog(kxf::Format(format, std::forward<Args>(args)...), true, indent);
 			}
 
 			template<class ...Args>
 			size_t LogNoTime(const kxf::String& format, Args&&... args) const
 			{
-				return DoLog(kxf::String::Format(format, std::forward<Args>(args)...), false);
+				return DoLog(kxf::Format(format, std::forward<Args>(args)...), false);
 			}
 	};
 }
