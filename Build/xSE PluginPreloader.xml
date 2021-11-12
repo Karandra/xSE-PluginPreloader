@@ -31,11 +31,11 @@
 				Description:
 					Same as 'OnProcessAttach' above, but loads plugins after certain number of threads have been created
 					by the host process (inside 'DLL_THREAD_ATTACH' notification). This methods has all the disadvantages
-					of the previous one and it can be triggered too late.
+					of the previous one but it can be triggered too late.
 				
 				Remarks:
 					The method mainly designed for Mod Organizer 2 (MO2) to give some time to its virtual file system to
-					initialize itself, otherwise there will be no plugins to preload id they're installed as MO2 virtual
+					initialize itself, otherwise there will be no plugins to preload if they're installed as MO2 virtual
 					mods.
 				
 				Parameters:
@@ -53,10 +53,19 @@
 					
 					Uses Detours library by Nukem: https://github.com/Nukem9/detours
 					
+				Remarks:
+					Fallout 4:
+						LibraryName: MSVCR110.dll
+						FunctionName: _initterm_e
+						
+					Skyrim (Special and Anniversary Edition):
+						LibraryName: api-ms-win-crt-runtime-l1-1-0.dll
+						FunctionName: _initterm_e
+					
 				Parameters:
 					- LibraryName: The name of a DLL that contains the function to hook.
 
-					- FunctionName: Name of the function to hook. Must be exported from the DLL pointed by 'LibraryName'.
+					- FunctionName: Name of the function to hook. Must be exported from the DLL pointed by the 'LibraryName' parameter.
 					Function *must* have a signature compatible with 'void(__cdecl*)(void*, void*)'.
 			-->
 			<ImportAddressHook>
@@ -69,6 +78,7 @@
 			Usually vectored exception handler is installed right before plugins loading and removed after it's done.
 			This option allows to keep it if you need more information in case the host process crashes. 
 		-->
+		<InstallExceptionHandler>true</InstallExceptionHandler>
 		<KeepExceptionHandler>false</KeepExceptionHandler>
 
 		<!--

@@ -13,17 +13,3 @@
 #include <kxf/FileSystem/FileItem.h>
 #include <kxf/FileSystem/FSPath.h>
 #include <kxf/FileSystem/IFileSystem.h>
-
-namespace std
-{
-	// Enumerations
-	template<class TPointer, class TChar> requires(std::is_pointer_v<TPointer>)
-	struct formatter<TPointer, TChar>: formatter<size_t, TChar>
-	{
-		template<class TFormatContext>
-		auto format(TPointer value, TFormatContext& formatContext)
-		{
-			return formatter<size_t, TChar>::format(reinterpret_cast<size_t>(value), formatContext);
-		}
-	};
-}

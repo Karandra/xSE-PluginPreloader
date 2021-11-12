@@ -100,6 +100,7 @@ namespace xSE
 			kxf::XMLDocument m_Config;
 			kxf::FSPath m_OriginalLibraryPath;
 			kxf::TimeSpan m_LoadDelay;
+			bool m_InstallExceptionHandler = true;
 			bool m_KeepExceptionHandler = false;
 			std::vector<kxf::String> m_AllowedProcessNames;
 

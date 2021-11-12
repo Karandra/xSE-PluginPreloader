@@ -79,7 +79,7 @@ namespace xSE
 	}
 	void PreloadHandler::LoadOriginalLibraryFunctions()
 	{
-		#if xSE_PLATFORM_F4SE
+		#if xSE_PLATFORM_F4SE || xSE_PLATFORM_SKSE64
 
 		LoadFunc_IpHlpAPI(AddIPAddress);
 		LoadFunc_IpHlpAPI(AllocateAndGetInterfaceInfoFromStack);
@@ -528,13 +528,17 @@ namespace xSE
 		LoadFunc_WinMM(waveOutUnprepareHeader);
 		LoadFunc_WinMM(waveOutWrite);
 
+		#else
+
+		#error "Unsupported configuration"
+
 		#endif
 	}
 }
 
 extern "C"
 {
-	#if xSE_PLATFORM_F4SE
+	#if xSE_PLATFORM_F4SE|| xSE_PLATFORM_SKSE64
 
 	DefineFunc_IpHlpAPI(AddIPAddress);
 	DefineFunc_IpHlpAPI(AllocateAndGetInterfaceInfoFromStack);
@@ -982,6 +986,10 @@ extern "C"
 	DefineFunc_WinMM(waveOutSetVolume);
 	DefineFunc_WinMM(waveOutUnprepareHeader);
 	DefineFunc_WinMM(waveOutWrite);
+
+	#else
+
+	#error "Unsupported configuration"
 
 	#endif
 };

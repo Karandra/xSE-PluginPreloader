@@ -96,5 +96,8 @@
     <None Include="Exports\NVSE.def">
       <Filter>Resources\Exports</Filter>
     </None>
+    <None Include="Exports\SKSE64.def">
+      <Filter>Resources\Exports</Filter>
+    </None>
   </ItemGroup>
 </Project>

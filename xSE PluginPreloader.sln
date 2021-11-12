@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31829.152
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xSE PluginPreloader", "xSE PluginPreloader.vcxproj", "{D8462034-E42F-47A3-863E-E6BC7252C178}"
 EndProject
@@ -16,16 +16,19 @@ Global
 		F4SE|x86 = F4SE|x86
 		NVSE|x64 = NVSE|x64
 		NVSE|x86 = NVSE|x86
+		SKSE64|x64 = SKSE64|x64
+		SKSE64|x86 = SKSE64|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{D8462034-E42F-47A3-863E-E6BC7252C178}.F4SE|x64.ActiveCfg = F4SE|x64
 		{D8462034-E42F-47A3-863E-E6BC7252C178}.F4SE|x64.Build.0 = F4SE|x64
 		{D8462034-E42F-47A3-863E-E6BC7252C178}.F4SE|x86.ActiveCfg = F4SE|Win32
-		{D8462034-E42F-47A3-863E-E6BC7252C178}.F4SE|x86.Build.0 = F4SE|Win32
 		{D8462034-E42F-47A3-863E-E6BC7252C178}.NVSE|x64.ActiveCfg = NVSE|x64
-		{D8462034-E42F-47A3-863E-E6BC7252C178}.NVSE|x64.Build.0 = NVSE|x64
 		{D8462034-E42F-47A3-863E-E6BC7252C178}.NVSE|x86.ActiveCfg = NVSE|Win32
 		{D8462034-E42F-47A3-863E-E6BC7252C178}.NVSE|x86.Build.0 = NVSE|Win32
+		{D8462034-E42F-47A3-863E-E6BC7252C178}.SKSE64|x64.ActiveCfg = SKSE64|x64
+		{D8462034-E42F-47A3-863E-E6BC7252C178}.SKSE64|x64.Build.0 = SKSE64|x64
+		{D8462034-E42F-47A3-863E-E6BC7252C178}.SKSE64|x86.ActiveCfg = SKSE64|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
