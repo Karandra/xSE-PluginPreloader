@@ -40,7 +40,7 @@ namespace xSE::PluginPreloader
 	class ImportAddressHook final
 	{
 		private:
-			void(__cdecl* m_UnhookedFunction)(void*, void*) = nullptr;
+			void*(__cdecl* m_UnhookedFunction)(void*, void*) = nullptr;
 
 		public:
 			kxf::String LibraryName;

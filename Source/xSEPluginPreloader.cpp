@@ -853,7 +853,7 @@ namespace xSE
 
 		struct ImportHook final
 		{
-			static void HookFunc(void* a1, void* a2)
+			static void* HookFunc(void* a1, void* a2)
 			{
 				g_Instance->Log(wxS("<ImportAddressHook> Enter hooked function"));
 
@@ -864,9 +864,11 @@ namespace xSE
 				}
 
 				g_Instance->Log(wxS("<ImportAddressHook> Calling unhooked function"));
+
+				void* result = nullptr;
 				const kxf::NtStatus status = SEHTryExcept([&]()
 				{
-					g_Instance->m_ImportAddressHook.CallUnhooked(a1, a2);
+					result = g_Instance->m_ImportAddressHook.CallUnhooked(a1, a2);
 				});
 
 				if (status)
@@ -885,6 +887,7 @@ namespace xSE
 				}
 
 				g_Instance->Log(wxS("<ImportAddressHook> Leave hooked function"));
+				return result;
 			}
 		};
 		m_ImportAddressHook.SaveUnhooked(Detour::FunctionIAT(&ImportHook::HookFunc, m_ImportAddressHook.LibraryName.nc_str(), m_ImportAddressHook.FunctionName.nc_str()));
