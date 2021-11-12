@@ -6,6 +6,8 @@
 #include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/Serialization/XML.h>
 
+BOOL APIENTRY DllMain(HMODULE, DWORD, LPVOID);
+
 namespace xSE
 {
 	enum class PluginStatus: uint32_t
@@ -72,12 +74,16 @@ namespace xSE
 {
 	class PreloadHandler final
 	{
+		friend BOOL APIENTRY ::DllMain(HMODULE, DWORD, LPVOID);
+
+		private:
+			static PreloadHandler& CreateInstance();
+			static void DestroyInstance();
+
 		public:
 			static kxf::String GetLibraryName();
 			static kxf::Version GetLibraryVersion();
 
-			static PreloadHandler& CreateInstance();
-			static void DestroyInstance();
 			static PreloadHandler& GetInstance();
 			static bool HasInstance();
 
@@ -96,9 +102,13 @@ namespace xSE
 			bool m_PluginsLoaded = false;
 			bool m_PluginsLoadAllowed = false;
 
+			std::atomic<size_t> m_ThreadAttachCount = 0;
+			bool m_WatchThreadAttach = false;
+
 			// Config
 			kxf::XMLDocument m_Config;
 			kxf::FSPath m_OriginalLibraryPath;
+			kxf::TimeSpan m_HookDelay;
 			kxf::TimeSpan m_LoadDelay;
 			bool m_InstallExceptionHandler = true;
 			bool m_KeepExceptionHandler = false;
@@ -141,6 +151,12 @@ namespace xSE
 			void LogHostProcessInfo() const;
 			void LogScriptExtenderInfo() const;
 
+			bool OnDLLMain(HMODULE handle, uint32_t event);
+			bool DisableThreadLibraryCalls(HMODULE handle);
+
+			bool HookImportTable();
+			bool LoadPlugins();
+
 		public:
 			PreloadHandler();
 			~PreloadHandler();
@@ -150,7 +166,6 @@ namespace xSE
 			{
 				return m_OriginalLibrary.IsNull() || !m_LoadMethod.has_value();
 			}
-			bool HookImportTable();
 			LoadMethod GetLoadMethod() const
 			{
 				return *m_LoadMethod;
@@ -164,7 +179,6 @@ namespace xSE
 			{
 				return m_PluginsLoadAllowed;
 			}
-			bool LoadPlugins();
 
 			template<LoadMethod method>
 			const auto& GetLoadMethodOptions() const noexcept
@@ -186,8 +200,6 @@ namespace xSE
 					static_assert(false);
 				}
 			}
-
-			bool DisableThreadLibraryCalls(HMODULE handle);
 
 		public:
 			size_t Log(const kxf::String& logString) const

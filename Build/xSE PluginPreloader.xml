@@ -84,8 +84,11 @@
 		<!--
 			Sets the amount of time the preloader will pause the loading thread, in milliseconds. 0 means no delay.
 			Don't change unless you need some time to attach debugger before loading starts, for example.
+
+			HookDelay works only for 'ImportAddressHook' methods and additionally waits before hooking the required function.
 		-->
 		<LoadDelay>0</LoadDelay>
+		<HookDelay>0</HookDelay>
 		
 		<!--
 			This block defines a list of processes which are allowed to preload plugins. Only processes in this list
@@ -100,9 +103,8 @@
 			<Item Name="Morrowind.exe" Allow="false"/>
 			<Item Name="Oblivion.exe" Allow="false"/>
 			<Item Name="TESV.exe" Allow="false"/>
-			<Item Name="Enderal.exe" Allow="false"/>
-			<Item Name="SkyrimSE.exe" Allow="false"/>
-			<Item Name="SkyrimVR.exe" Allow="false"/>
+			<Item Name="SkyrimSE.exe" Allow="true"/>
+			<Item Name="SkyrimVR.exe" Allow="true"/>
 			
 			<Item Name="TESConstructionSet.exe" Allow="false"/>
 			<Item Name="CreationKit.exe" Allow="false"/>

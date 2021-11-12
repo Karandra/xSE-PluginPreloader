@@ -158,15 +158,6 @@ namespace Detour
 
 namespace xSE
 {
-	kxf::String PreloadHandler::GetLibraryName()
-	{
-		return "xSE PluginPreloader";
-	}
-	kxf::Version PreloadHandler::GetLibraryVersion()
-	{
-		return "0.2.4";
-	}
-
 	PreloadHandler& PreloadHandler::CreateInstance()
 	{
 		if (!g_Instance)
@@ -179,6 +170,16 @@ namespace xSE
 	{
 		g_Instance = nullptr;
 	}
+	
+	kxf::String PreloadHandler::GetLibraryName()
+	{
+		return "xSE PluginPreloader";
+	}
+	kxf::Version PreloadHandler::GetLibraryVersion()
+	{
+		return "0.2.5";
+	}
+
 	PreloadHandler& PreloadHandler::GetInstance()
 	{
 		return *g_Instance;
@@ -470,13 +471,13 @@ namespace xSE
 		}
 		else
 		{
-			Log("Installing vectored exception handler: disabled in configuration file");
+			Log("Installing vectored exception handler: disabled in the config file");
 			return false;
 		}
 	}
 	void PreloadHandler::RemoveVectoredExceptionHandler()
 	{
-		Log("Removing vectored exception handler: {}"), m_VectoredExceptionHandler.Remove() ? "success" : "failed (not installed or already removed)";
+		Log("Removing vectored exception handler: {}", m_VectoredExceptionHandler.Remove() ? "success" : "failed (not installed or already removed)");
 	}
 	uint32_t PreloadHandler::OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo)
 	{
@@ -652,6 +653,181 @@ namespace xSE
 			auto lastError = kxf::Win32Error::GetLastError();
 			Log("<Script Extender> Couldn't load {} binary, probably not installed: [Win32: '{}' ({})]", xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
 		}
+	}
+
+	bool PreloadHandler::OnDLLMain(HMODULE handle, uint32_t event)
+	{
+		switch (event)
+		{
+			case DLL_PROCESS_ATTACH:
+			{
+				if (*m_LoadMethod == LoadMethod::OnProcessAttach || *m_LoadMethod == LoadMethod::ImportAddressHook)
+				{
+					DisableThreadLibraryCalls(handle);
+
+					if (*m_LoadMethod == LoadMethod::OnProcessAttach)
+					{
+						Log("<OnProcessAttach> LoadPlugins");
+						LoadPlugins();
+					}
+					else if (*m_LoadMethod == LoadMethod::ImportAddressHook)
+					{
+						Log("<ImportAddressHook> HookImportTable");
+						HookImportTable();
+					}
+				}
+				else if (*m_LoadMethod == LoadMethod::OnThreadAttach)
+				{
+					m_WatchThreadAttach = true;
+				}
+
+				break;
+			}
+			case DLL_THREAD_ATTACH:
+			{
+				if (!m_WatchThreadAttach)
+				{
+					break;
+				}
+
+				if (*m_LoadMethod == LoadMethod::OnThreadAttach)
+				{
+					const size_t threadCounter = ++m_ThreadAttachCount;
+					Log("<OnThreadAttach> Attached thread {}", threadCounter);
+
+					auto& options = GetLoadMethodOptions<LoadMethod::OnThreadAttach>();
+					if (options.ThreadNumber == threadCounter)
+					{
+						DisableThreadLibraryCalls(handle);
+
+						Log("<OnThreadAttach> LoadPlugins");
+						LoadPlugins();
+					}
+				}
+
+				break;
+			}
+			case DLL_PROCESS_DETACH:
+			{
+				PreloadHandler::DestroyInstance();
+				break;
+			}
+		};
+		return true;
+	}
+	bool PreloadHandler::DisableThreadLibraryCalls(HMODULE handle)
+	{
+		m_WatchThreadAttach = false;
+		if (::DisableThreadLibraryCalls(handle))
+		{
+			Log("<DisableThreadLibraryCalls> Success");
+			return true;
+		}
+		else
+		{
+			auto lastError = kxf::Win32Error::GetLastError();
+			Log("<DisableThreadLibraryCalls> Failed: [Win32: '{}' ({})]", lastError.GetMessage(), lastError.GetValue());
+
+			return false;
+		}
+	}
+
+	bool PreloadHandler::HookImportTable()
+	{
+		if (!m_PluginsLoadAllowed)
+		{
+			Log("<ImportAddressHook> Plugins preload disabled for this process, skipping hook installation");
+			return false;
+		}
+
+		if (m_HookDelay.IsPositive())
+		{
+			Log("<HookDelay> Hooking is delayed by '{}' ms, waiting", m_HookDelay.GetMilliseconds());
+			::Sleep(m_HookDelay.GetMilliseconds());
+			Log("<HookDelay> Wait time is out, continuing hooking");
+		}
+
+		Log("<ImportAddressHook> Hooking function '{}' from library '{}'", m_ImportAddressHook.FunctionName, m_ImportAddressHook.LibraryName);
+
+		struct ImportHook final
+		{
+			static void* HookFunc(void* a1, void* a2)
+			{
+				g_Instance->Log("<ImportAddressHook> Enter hooked function");
+
+				if (!g_Instance->IsPluginsLoaded())
+				{
+					g_Instance->Log("<ImportAddressHook> LoadPlugins");
+					g_Instance->LoadPlugins();
+				}
+
+				g_Instance->Log("<ImportAddressHook> Calling unhooked function");
+
+				void* result = nullptr;
+				const kxf::NtStatus status = SEHTryExcept([&]()
+				{
+					result = g_Instance->m_ImportAddressHook.CallUnhooked(a1, a2);
+				});
+
+				if (status)
+				{
+					g_Instance->Log("<ImportAddressHook> Unhooked function returned successfully");
+				}
+				else
+				{
+					g_Instance->Log("<ImportAddressHook> Exception occurred: [NtStatus: '{}' ({})]", status.GetMessage(), status.GetValue());
+				}
+
+				// Remove exception handler if needed
+				if (!g_Instance->m_KeepExceptionHandler)
+				{
+					g_Instance->RemoveVectoredExceptionHandler();
+				}
+
+				g_Instance->Log("<ImportAddressHook> Leave hooked function");
+				return result;
+			}
+		};
+		m_ImportAddressHook.SaveUnhooked(Detour::FunctionIAT(&ImportHook::HookFunc, m_ImportAddressHook.LibraryName.nc_str(), m_ImportAddressHook.FunctionName.nc_str()));
+
+		if (m_ImportAddressHook.IsHooked())
+		{
+			LogIndent(1, "Success [Hooked={:#0{}x}], [Unhooked={:#0{}x}]",
+					  reinterpret_cast<size_t>(&ImportHook::HookFunc), sizeof(void*),
+					  reinterpret_cast<size_t>(m_ImportAddressHook.GetUnhooked()), sizeof(void*)
+			);
+			return true;
+		}
+		else
+		{
+			LogIndent(1, "Unable to hook import table function");
+			return false;
+		}
+	}
+	bool PreloadHandler::LoadPlugins()
+	{
+		if (!m_PluginsLoadAllowed)
+		{
+			Log("Plugins preload disabled for this process");
+			return false;
+		}
+
+		if (!m_PluginsLoaded)
+		{
+			Log("Loading plugins");
+			if (m_LoadDelay.IsPositive())
+			{
+				Log("<LoadDelay> Loading plugins is delayed by '{}' ms, waiting", m_LoadDelay.GetMilliseconds());
+				::Sleep(m_LoadDelay.GetMilliseconds());
+				Log("<LoadDelay> Wait time is out, continuing loading");
+			}
+
+			DoLoadPlugins();
+			m_PluginsLoaded = true;
+
+			return true;
+		}
+		return false;
 	}
 
 	PreloadHandler::PreloadHandler()
@@ -839,112 +1015,5 @@ namespace xSE
 		kxf::Log::SetActiveTarget(nullptr);
 		kxf::Log::Enable(false);
 		m_LogStream = nullptr;
-	}
-
-	bool PreloadHandler::HookImportTable()
-	{
-		if (!m_PluginsLoadAllowed)
-		{
-			Log("<ImportAddressHook> Plugins preload disabled for this process, skipping hook installation");
-			return false;
-		}
-
-		Log("<ImportAddressHook> Hooking function '{}' from library '{}'", m_ImportAddressHook.FunctionName, m_ImportAddressHook.LibraryName);
-
-		struct ImportHook final
-		{
-			static void* HookFunc(void* a1, void* a2)
-			{
-				g_Instance->Log("<ImportAddressHook> Enter hooked function");
-
-				if (!g_Instance->IsPluginsLoaded())
-				{
-					g_Instance->Log("<ImportAddressHook> LoadPlugins");
-					g_Instance->LoadPlugins();
-				}
-
-				g_Instance->Log("<ImportAddressHook> Calling unhooked function");
-
-				void* result = nullptr;
-				const kxf::NtStatus status = SEHTryExcept([&]()
-				{
-					result = g_Instance->m_ImportAddressHook.CallUnhooked(a1, a2);
-				});
-
-				if (status)
-				{
-					g_Instance->Log("<ImportAddressHook> Unhooked function returned successfully");
-				}
-				else
-				{
-					g_Instance->Log("<ImportAddressHook> Exception occurred: [NtStatus: '{}' ({})]", status.GetMessage(), status.GetValue());
-				}
-
-				// Remove exception handler if needed
-				if (!g_Instance->m_KeepExceptionHandler)
-				{
-					g_Instance->RemoveVectoredExceptionHandler();
-				}
-
-				g_Instance->Log("<ImportAddressHook> Leave hooked function");
-				return result;
-			}
-		};
-		m_ImportAddressHook.SaveUnhooked(Detour::FunctionIAT(&ImportHook::HookFunc, m_ImportAddressHook.LibraryName.nc_str(), m_ImportAddressHook.FunctionName.nc_str()));
-
-		if (m_ImportAddressHook.IsHooked())
-		{
-			LogIndent(1, "Success [Hooked={:#0{}x}], [Unhooked={:#0{}x}]",
-					  reinterpret_cast<size_t>(&ImportHook::HookFunc), sizeof(void*),
-					  reinterpret_cast<size_t>(m_ImportAddressHook.GetUnhooked()), sizeof(void*)
-			);
-			return true;
-		}
-		else
-		{
-			LogIndent(1, "Unable to hook import table function");
-			return false;
-		}
-	}
-	bool PreloadHandler::LoadPlugins()
-	{
-		if (!m_PluginsLoadAllowed)
-		{
-			Log("Plugins preload disabled for this process");
-			return false;
-		}
-
-		if (!m_PluginsLoaded)
-		{
-			Log("Loading plugins");
-			if (m_LoadDelay.IsPositive())
-			{
-				Log("<LoadDelay> Loading plugins is delayed by '{}' ms, waiting", m_LoadDelay.GetMilliseconds());
-				::Sleep(m_LoadDelay.GetMilliseconds());
-				Log("<LoadDelay> Wait time is out, continuing loading");
-			}
-
-			DoLoadPlugins();
-			m_PluginsLoaded = true;
-
-			return true;
-		}
-		return false;
-	}
-
-	bool PreloadHandler::DisableThreadLibraryCalls(HMODULE handle)
-	{
-		if (::DisableThreadLibraryCalls(handle))
-		{
-			Log("<DisableThreadLibraryCalls> Success");
-			return true;
-		}
-		else
-		{
-			auto lastError = kxf::Win32Error::GetLastError();
-			Log("<DisableThreadLibraryCalls> Failed: [Win32: '{}' ({})]", lastError.GetMessage(), lastError.GetValue());
-
-			return false;
-		}
 	}
 }
