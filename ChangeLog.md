@@ -1,5 +1,8 @@
 *Dates in DD.MM.YYYY*
 
+# Version 0.2.5, 12.11.2021
+- Added experimental support for Skyrim (Special and Anniversary Edition).
+
 # Version 0.2.4, 30.11.2020
 - Added DLL load time dependencies diagnostics when plugin failed to load.
 - Removed service pack logging for systems where it's not applicable (Win10).

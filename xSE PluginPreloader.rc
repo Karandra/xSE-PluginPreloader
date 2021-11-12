@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,2,4,0
- PRODUCTVERSION 0,2,4,0
+ FILEVERSION 0,2,5,0
+ PRODUCTVERSION 0,2,5,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -67,14 +67,14 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "Kerber"
+            VALUE "CompanyName", "Karandra"
             VALUE "FileDescription", "xSE Plugin Preloader"
-            VALUE "FileVersion", "0.2.4.0"
+            VALUE "FileVersion", "0.2.5.0"
             VALUE "InternalName", "xSE PluginPreloader.dll"
-            VALUE "LegalCopyright", "CopyrightÂ© 2018-2020"
+            VALUE "LegalCopyright", "Copyright© 2018-2021"
             VALUE "OriginalFilename", "xSE PluginPreloader.dll"
             VALUE "ProductName", "xSE PluginPreloader"
-            VALUE "ProductVersion", "0.2.4.0"
+            VALUE "ProductVersion", "0.2.5.0"
         END
     END
     BLOCK "VarFileInfo"
