@@ -18,7 +18,7 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 			PreloadHandler& handler = PreloadHandler::CreateInstance();
 			if (handler.IsNull())
 			{
-				handler.Log(wxS("Invalid state of PreloadHandler reported. Terminating process."));
+				handler.Log("Invalid state of PreloadHandler reported. Terminating process.");
 				return FALSE;
 			}
 
@@ -29,12 +29,12 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 
 				if (method == LoadMethod::OnProcessAttach)
 				{
-					handler.Log(wxS("<OnProcessAttach> LoadPlugins"));
+					handler.Log("<OnProcessAttach> LoadPlugins");
 					handler.LoadPlugins();
 				}
 				else if (method == LoadMethod::ImportAddressHook)
 				{
-					handler.Log(wxS("<ImportAddressHook> HookImportTable"));
+					handler.Log("<ImportAddressHook> HookImportTable");
 					handler.HookImportTable();
 				}
 			}
@@ -51,7 +51,7 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 			if (handler.GetLoadMethod() == LoadMethod::OnThreadAttach)
 			{
 				const size_t threadCounter = ++g_ThreadAttachCount;
-				handler.Log(wxS("<OnThreadAttach> Attached thread #%1"), threadCounter);
+				handler.Log("<OnThreadAttach> Attached thread #%1", threadCounter);
 
 				decltype(auto) options = handler.GetLoadMethodOptions<LoadMethod::OnThreadAttach>();
 				if (options.ThreadNumber == threadCounter)
@@ -59,7 +59,7 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 					handler.DisableThreadLibraryCalls(handle);
 					g_WatchThreadAttach = false;
 
-					handler.Log(wxS("<OnThreadAttach> LoadPlugins"));
+					handler.Log("<OnThreadAttach> LoadPlugins");
 					handler.LoadPlugins();
 				}
 			}

@@ -36,8 +36,8 @@ namespace
 {
 	std::unique_ptr<xSE::PreloadHandler> g_Instance;
 
-	constexpr auto g_ConfigFileName = wxS("xSE PluginPreloader.xml");
-	constexpr auto g_LogFileName = wxS("xSE PluginPreloader.log");
+	constexpr auto g_ConfigFileName = "xSE PluginPreloader.xml";
+	constexpr auto g_LogFileName = "xSE PluginPreloader.log";
 
 	template<class TFunc>
 	__declspec(noinline) uint32_t SEHTryExcept(TFunc&& func)
@@ -61,27 +61,27 @@ namespace
 		{
 			case PluginStatus::Loaded:
 			{
-				g_Instance->LogIndent(1, wxS("<{}> Plugin loaded successfully"), path.GetName());
+				g_Instance->LogIndent(1, "<{}> Plugin loaded successfully", path.GetName());
 				break;
 			}
 			case PluginStatus::Initialized:
 			{
-				g_Instance->LogIndent(1, wxS("<{}> Plugin 'loaded successfully, 'Initialize' executed successfully"), path.GetName());
+				g_Instance->LogIndent(1, "<{}> Plugin 'loaded successfully, 'Initialize' executed successfully", path.GetName());
 				break;
 			}
 			case PluginStatus::FailedLoad:
 			{
-				g_Instance->LogIndent(1, wxS("<{}> Plugin failed to load"), path.GetName());
+				g_Instance->LogIndent(1, "<{}> Plugin failed to load", path.GetName());
 				break;
 			}
 			case PluginStatus::FailedInitialize:
 			{
-				g_Instance->LogIndent(1, wxS("<{}> Plugin failed to load. Exception was thrown during 'Initialize' execution"), path.GetName());
+				g_Instance->LogIndent(1, "<{}> Plugin failed to load. Exception was thrown during 'Initialize' execution", path.GetName());
 				break;
 			}
 			default:
 			{
-				g_Instance->LogIndent(1, wxS("<{}> Unknown plugin status code ({})"), path.GetName(), static_cast<uint32_t>(status));
+				g_Instance->LogIndent(1, "<{}> Unknown plugin status code ({})", path.GetName(), static_cast<uint32_t>(status));
 				break;
 			}
 		};
@@ -91,15 +91,15 @@ namespace
 	{
 		using namespace xSE;
 
-		if (name == wxS("OnProcessAttach"))
+		if (name == "OnProcessAttach")
 		{
 			return LoadMethod::OnProcessAttach;
 		}
-		else if (name == wxS("OnThreadAttach"))
+		else if (name == "OnThreadAttach")
 		{
 			return LoadMethod::OnThreadAttach;
 		}
-		else if (name == wxS("ImportAddressHook"))
+		else if (name == "ImportAddressHook")
 		{
 			return LoadMethod::ImportAddressHook;
 		}
@@ -113,44 +113,44 @@ namespace
 		{
 			case LoadMethod::OnProcessAttach:
 			{
-				return wxS("OnProcessAttach");
+				return "OnProcessAttach";
 			}
 			case LoadMethod::OnThreadAttach:
 			{
-				return wxS("OnThreadAttach");
+				return "OnThreadAttach";
 			}
 			case LoadMethod::ImportAddressHook:
 			{
-				return wxS("ImportAddressHook");
+				return "ImportAddressHook";
 			}
 		};
-		return wxS("Unknown");
+		return "Unknown";
 	}
 }
 
 namespace Detour
 {
-	template<class T>
-	T FunctionIAT(T func, const char* libraryName, const char* functionName) noexcept
+	template<class T> requires(std::is_function_v<T>)
+	T* FunctionIAT(T* func, const char* libraryName, const char* functionName) noexcept
 	{
 		const uintptr_t base = reinterpret_cast<uintptr_t>(::GetModuleHandleW(nullptr));
-		return reinterpret_cast<T>(NukemDetoursBase::IATHook(base, libraryName, functionName, reinterpret_cast<uintptr_t>(func)));
+		return reinterpret_cast<T*>(NukemDetoursBase::IATHook(base, libraryName, functionName, reinterpret_cast<uintptr_t>(func)));
 	}
 
-	template<class T>
+	template<class T> requires(std::is_function_v<T>)
 	T FunctionFromModule(HMODULE moduleBase, T func, uintptr_t offset) noexcept
 	{
-		return reinterpret_cast<T>(NukemDetours::DetourFunction(reinterpret_cast<uintptr_t>(moduleBase) + offset, reinterpret_cast<uintptr_t>(func)));
+		return reinterpret_cast<T*>(NukemDetours::DetourFunction(reinterpret_cast<uintptr_t>(moduleBase) + offset, reinterpret_cast<uintptr_t>(func)));
 	}
 
-	template<class T>
-	T FunctionFromModuleByName(const wchar_t* libraryName, T func, uintptr_t offset) noexcept
+	template<class T> requires(std::is_function_v<T>)
+	T* FunctionFromModuleByName(const wchar_t* libraryName, T* func, uintptr_t offset) noexcept
 	{
 		return FunctionFromModule(::GetModuleHandleW(libraryName), func, offset);
 	}
 
-	template<class T>
-	T FunctionFromExecutingModule(T func, uintptr_t offset) noexcept
+	template<class T> requires(std::is_function_v<T>)
+	T* FunctionFromExecutingModule(T* func, uintptr_t offset) noexcept
 	{
 		return FunctionFromModuleByName(nullptr, func, offset);
 	}
@@ -160,11 +160,11 @@ namespace xSE
 {
 	kxf::String PreloadHandler::GetLibraryName()
 	{
-		return wxS("xSE PluginPreloader");
+		return "xSE PluginPreloader";
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return wxS("0.2.4");
+		return "0.2.4";
 	}
 
 	PreloadHandler& PreloadHandler::CreateInstance()
@@ -198,10 +198,10 @@ namespace xSE
 	}
 	kxf::FSPath PreloadHandler::GetOriginalLibraryDefaultPath() const
 	{
-		#if xSE_PLATFORM_F4SE || xSE_PLATFORM_SKSE64
-		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / wxS("IpHlpAPI.dll");
+		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
+		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "IpHlpAPI.dll";
 		#elif xSE_PLATFORM_NVSE
-		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / wxS("WinMM.dll");
+		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "WinMM.dll";
 		#else
 		#error "Unsupported configuration"
 		#endif
@@ -220,7 +220,7 @@ namespace xSE
 		};
 
 		// Begin loading
-		Log(wxS("Searching directory '{}' for plugins"), m_PluginsDirectory.GetFullPath());
+		Log("Searching directory '{}' for plugins", m_PluginsDirectory.GetFullPath());
 
 		size_t itemsScanned = 0;
 		for (const kxf::FileItem& fileItem: m_FileSystem.EnumItems(m_PluginsDirectory, "*_preload.txt", kxf::FSActionFlag::LimitToFiles))
@@ -236,7 +236,7 @@ namespace xSE
 			}
 		}
 
-		Log(wxS("Loading finished, {} plugins loaded, {} items scanned"), m_LoadedLibraries.size(), itemsScanned);
+		Log("Loading finished, {} plugins loaded, {} items scanned", m_LoadedLibraries.size(), itemsScanned);
 	}
 	void PreloadHandler::DoUnloadPlugins()
 	{
@@ -270,7 +270,7 @@ namespace xSE
 		{
 			if (pluginLibrary)
 			{
-				LogIndent(1, wxS("<{}> Library is loaded, attempt to call initialization routine"), path.GetName());
+				LogIndent(1, "<{}> Library is loaded, attempt to call initialization routine", path.GetName());
 
 				// Call initialization routine
 				const kxf::NtStatus initializeStatus = SEHTryExcept([&]()
@@ -319,25 +319,25 @@ namespace xSE
 	{
 		const kxf::NtStatus status = SEHTryExcept([&]()
 		{
-			LogIndent(logIndentOffset + 1, wxS("<{}> Trying to read library dependencies list"), path.GetName());
+			LogIndent(logIndentOffset + 1, "<{}> Trying to read library dependencies list", path.GetName());
 
 			kxf::DynamicLibrary library(path, kxf::DynamicLibraryFlag::Resource);
 			if (library)
 			{
-				LogIndent(logIndentOffset + 1, wxS("<{}> Dependency module names:"), path.GetName());
+				LogIndent(logIndentOffset + 1, "<{}> Dependency module names:", path.GetName());
 				library.EnumDependencyModuleNames([&](kxf::String moduleName)
 				{
 					kxf::DynamicLibrary dependencyModule(moduleName, kxf::DynamicLibraryFlag::Resource);
 					if (dependencyModule)
 					{
-						LogIndent(logIndentOffset + 2, wxS("<{}> Module name '{}' loaded successfully as a resource from '{}'"), path.GetName(), moduleName, dependencyModule.GetFilePath().GetFullPath());
+						LogIndent(logIndentOffset + 2, "<{}> Module name '{}' loaded successfully as a resource from '{}'", path.GetName(), moduleName, dependencyModule.GetFilePath().GetFullPath());
 					}
 					else
 					{
-						LogIndent(logIndentOffset + 2, wxS("<{}> Module name '{}' couldn't be loaded"), path.GetName(), moduleName);
+						LogIndent(logIndentOffset + 2, "<{}> Module name '{}' couldn't be loaded", path.GetName(), moduleName);
 
 						auto lastError = kxf::Win32Error::GetLastError();
-						LogIndent(logIndentOffset + 3, wxS("<{}> Couldn't load the dependency library as a resource: [Win32: '{}' ({})]"), moduleName, lastError.GetMessage(), lastError.GetValue());
+						LogIndent(logIndentOffset + 3, "<{}> Couldn't load the dependency library as a resource: [Win32: '{}' ({})]", moduleName, lastError.GetMessage(), lastError.GetValue());
 
 						// Try to look for recursive dependencies if the file exists but couldn't be loaded
 						if (lastError != ERROR_FILE_NOT_FOUND && lastError != ERROR_PATH_NOT_FOUND)
@@ -351,20 +351,20 @@ namespace xSE
 			else
 			{
 				auto lastError = kxf::Win32Error::GetLastError();
-				LogIndent(logIndentOffset + 1, wxS("<{}> Couldn't load the library as a resource for diagnostics: [Win32: '{}' ({})]"), path.GetName(), lastError.GetMessage(), lastError.GetValue());
+				LogIndent(logIndentOffset + 1, "<{}> Couldn't load the library as a resource for diagnostics: [Win32: '{}' ({})]", path.GetName(), lastError.GetMessage(), lastError.GetValue());
 			}
 		});
 
 		if (!status)
 		{
-			LogIndent(logIndentOffset + 1, wxS("<{}> Exception occurred while scanning plugin library dependencies: [NtStatus: '{}' ({})]"), path.GetName(), status.GetMessage(), status.GetValue());
+			LogIndent(logIndentOffset + 1, "<{}> Exception occurred while scanning plugin library dependencies: [NtStatus: '{}' ({})]", path.GetName(), status.GetMessage(), status.GetValue());
 		}
 	}
 
 	bool PreloadHandler::CheckAllowedProcesses() const
 	{
 		const kxf::String thisExecutableName = m_ExecutablePath.GetName();
-		Log(wxS("<{}> Checking process name to determine if it's allowed to preload plugins. Following process names are allowed: [{}]"), thisExecutableName, [&]() -> kxf::String
+		Log("<{}> Checking process name to determine if it's allowed to preload plugins. Following process names are allowed: [{}]", thisExecutableName, [&]() -> kxf::String
 		{
 			if (!m_AllowedProcessNames.empty())
 			{
@@ -373,7 +373,7 @@ namespace xSE
 				{
 					if (!result.IsEmpty())
 					{
-						result += wxS(", ");
+						result += ", ";
 					}
 
 					result += wxS('\'');
@@ -384,7 +384,7 @@ namespace xSE
 			}
 			else
 			{
-				return wxS("<none>");
+				return "<none>";
 			}
 		}());
 
@@ -392,7 +392,7 @@ namespace xSE
 		{
 			if (name.IsSameAs(thisExecutableName, kxf::StringActionFlag::IgnoreCase))
 			{
-				Log(wxS("<{}> Match found: '{}'"), thisExecutableName, name);
+				Log("<{}> Match found: '{}'", thisExecutableName, name);
 				return true;
 			}
 			return false;
@@ -401,22 +401,22 @@ namespace xSE
 	void PreloadHandler::LoadOriginalLibrary()
 	{
 		kxf::FSPath path = GetOriginalLibraryPath();
-		Log(wxS("<{}> Loading original library"), path.GetFullPath());
+		Log("<{}> Loading original library", path.GetFullPath());
 
 		ClearOriginalFunctions();
 		if (m_OriginalLibrary.Load(path))
 		{
-			Log(wxS("<{}> Original library loaded successfully"), path.GetFullPath());
+			Log("<{}> Original library loaded successfully", path.GetFullPath());
 		}
 		else
 		{
 			auto lastError = kxf::Win32Error::GetLastError();
-			Log(wxS("<{}> Couldn't load library: [Win32: {} ({})]"), path.GetFullPath(), lastError.GetMessage(), lastError.GetValue());
+			Log("<{}> Couldn't load library: [Win32: {} ({})]", path.GetFullPath(), lastError.GetMessage(), lastError.GetValue());
 		}
 	}
 	void PreloadHandler::UnloadOriginalLibrary()
 	{
-		Log(wxS("<{}> Unloading original library"), m_OriginalLibrary.GetFilePath().GetFullPath());
+		Log("<{}> Unloading original library", m_OriginalLibrary.GetFilePath().GetFullPath());
 
 		m_OriginalLibrary.Unload();
 		ClearOriginalFunctions();
@@ -476,18 +476,18 @@ namespace xSE
 	}
 	void PreloadHandler::RemoveVectoredExceptionHandler()
 	{
-		Log(wxS("Removing vectored exception handler: {}"), m_VectoredExceptionHandler.Remove() ? "success" : "failed (not installed or already removed)");
+		Log("Removing vectored exception handler: {}"), m_VectoredExceptionHandler.Remove() ? "success" : "failed (not installed or already removed)";
 	}
 	uint32_t PreloadHandler::OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo)
 	{
-		Log(wxS("Caught vectored continue:"));
+		Log("Caught vectored continue:");
 		LogNoTime(DumpExceptionInformation(exceptionInfo));
 
 		return EXCEPTION_CONTINUE_SEARCH;
 	}
 	uint32_t PreloadHandler::OnVectoredException(const _EXCEPTION_POINTERS& exceptionInfo)
 	{
-		Log(wxS("Caught vectored exception:"));
+		Log("Caught vectored exception:");
 		LogNoTime(DumpExceptionInformation(exceptionInfo));
 
 		return EXCEPTION_CONTINUE_SEARCH;
@@ -550,7 +550,7 @@ namespace xSE
 
 	bool PreloadHandler::InitializeFramework()
 	{
-		Log(wxS("Initializing framework"));
+		Log("Initializing framework");
 
 		// Disable asserts as they're not useful here
 		wxLog::DontCreateOnDemand();
@@ -567,7 +567,7 @@ namespace xSE
 				protected:
 					void DoLogRecord(wxLogLevel level, const wxString& message, const wxLogRecordInfo& info) override
 					{
-						m_Instance.Log(wxS("<Framework> {}"), message);
+						m_Instance.Log("<Framework> {}", message);
 					}
 
 				public:
@@ -587,7 +587,7 @@ namespace xSE
 		wxModule::RegisterModules();
 		if (!wxModule::InitializeModules())
 		{
-			LogIndent(1, wxS("Initializing framework: failed"));
+			LogIndent(1, "Initializing framework: failed");
 			return false;
 		}
 		return true;
@@ -598,59 +598,59 @@ namespace xSE
 		{
 			const kxf::System::KernelVersion kernel = versionInfo->Kernel;
 			const bool is64Bit = kxf::System::Is64Bit();
-			Log(wxS("<Environment> Operation system: '{}' {}.{}.{}"), kxf::System::GetProductName(*versionInfo, is64Bit), kernel.Major, kernel.Minor, kernel.Build);
+			Log("<Environment> Operation system: '{}' {}.{}.{}", kxf::System::GetProductName(*versionInfo, is64Bit), kernel.Major, kernel.Minor, kernel.Build);
 
 			if (kernel.ServicePackMajor > 0)
 			{
-				Log(wxS("<Environment> System service pack: '{}' {}.{}"), versionInfo->ServicePack, kernel.ServicePackMajor, kernel.ServicePackMinor);
+				Log("<Environment> System service pack: '{}' {}.{}", versionInfo->ServicePack, kernel.ServicePackMajor, kernel.ServicePackMinor);
 			}
-			Log(wxS("<Environment> System product type: {}"), kxf::ToInt(versionInfo->ProductType));
+			Log("<Environment> System product type: {}", kxf::ToInt(versionInfo->ProductType));
 		}
 		else
 		{
-			Log(wxS("<Environment> Couldn't query system version"));
+			Log("<Environment> Couldn't query system version");
 		}
 
-		Log(wxS("<Environment> System default locale: '{}'"), kxf::Locale::GetSystemDefault().GetName());
-		Log(wxS("<Environment> System preferred locale: '{}'"), kxf::Locale::GetSystemPreferred().GetName());
+		Log("<Environment> System default locale: '{}'", kxf::Locale::GetSystemDefault().GetName());
+		Log("<Environment> System preferred locale: '{}'", kxf::Locale::GetSystemPreferred().GetName());
 	}
 	void PreloadHandler::LogCurrentModuleInfo() const
 	{
 		auto currentModule = kxf::DynamicLibrary::GetCurrentModule();
 
-		Log(wxS("<Current module> Binary: '{}'"), currentModule.GetFilePath().GetFullPath());
-		Log(wxS("<Current module> {} v{} loaded"), GetLibraryName(), GetLibraryVersion().ToString());
+		Log("<Current module> Binary: '{}'", currentModule.GetFilePath().GetFullPath());
+		Log("<Current module> {} v{} loaded", GetLibraryName(), GetLibraryVersion().ToString());
 	}
 	void PreloadHandler::LogHostProcessInfo() const
 	{
-		Log(wxS("<Host process> Binary: '{}'"), m_ExecutablePath.GetFullPath());
+		Log("<Host process> Binary: '{}'", m_ExecutablePath.GetFullPath());
 
 		const kxf::ExecutableVersionResource resourceInfo(m_ExecutablePath);
 		if (resourceInfo)
 		{
-			Log(wxS("<Host process> Version: {}"), resourceInfo.GetAnyVersion());
+			Log("<Host process> Version: {}", resourceInfo.GetAnyVersion());
 		}
 		else
 		{
 			auto lastError = kxf::Win32Error::GetLastError();
-			Log(wxS("<Host process> Couldn't load host process binary. [Win32: '{}' ({})]"), lastError.GetMessage(), lastError.GetValue());
+			Log("<Host process> Couldn't load host process binary. [Win32: '{}' ({})]", lastError.GetMessage(), lastError.GetValue());
 		}
 	}
 	void PreloadHandler::LogScriptExtenderInfo() const
 	{
-		const kxf::FSPath loaderPath = m_FileSystem.ResolvePath(xSE_FOLDER_NAME_W wxS("_Loader.exe"));
-		Log(wxS("<Script Extender> Platform: {}"), xSE_NAME_W);
-		Log(wxS("<Script Extender> Binary: '{}'"), loaderPath.GetFullPath());
+		const kxf::FSPath loaderPath = m_FileSystem.ResolvePath(xSE_FOLDER_NAME_W "_Loader.exe");
+		Log("<Script Extender> Platform: {}", xSE_NAME_W);
+		Log("<Script Extender> Binary: '{}'", loaderPath.GetFullPath());
 
 		const kxf::ExecutableVersionResource resourceInfo(loaderPath);
 		if (resourceInfo)
 		{
-			Log(wxS("<Script Extender> Version: {}"), resourceInfo.GetAnyVersion());
+			Log("<Script Extender> Version: {}", resourceInfo.GetAnyVersion());
 		}
 		else
 		{
 			auto lastError = kxf::Win32Error::GetLastError();
-			Log(wxS("<Script Extender> Couldn't load {} binary, probably not installed: [Win32: '{}' ({})]"), xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
+			Log("<Script Extender> Couldn't load {} binary, probably not installed: [Win32: '{}' ({})]", xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
 		}
 	}
 
@@ -663,7 +663,7 @@ namespace xSE
 
 		// Open log
 		m_LogStream = m_FileSystem.OpenToWrite(g_LogFileName);
-		Log(wxS("Log opened"));
+		Log("Log opened");
 
 		// Init framework
 		InitializeFramework();
@@ -673,108 +673,108 @@ namespace xSE
 		LogEnvironmentInfo();
 
 		// Load config
-		Log(wxS("Loading configuration from '{}'"), m_FileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
+		Log("Loading configuration from '{}'", m_FileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
 		if (auto readStream = m_FileSystem.OpenToRead(g_ConfigFileName); readStream && m_Config.Load(*readStream))
 		{
-			LogIndent(1, wxS("Configuration file successfully loaded"));
+			LogIndent(1, "Configuration file successfully loaded");
 		}
 		else
 		{
 			if (readStream)
 			{
-				LogIndent(1, wxS("Couldn't load configuration. The file is found, but can not be loaded, default configuration will be used"));
+				LogIndent(1, "Couldn't load configuration. The file is found, but can not be loaded, default configuration will be used");
 			}
 			else
 			{
 				auto lastError = kxf::Win32Error::GetLastError();
-				LogIndent(1, wxS("Couldn't load configuration file: [Win32: '{}' ({})], default configuration will be used"), lastError.GetMessage(), lastError.GetValue());
+				LogIndent(1, "Couldn't load configuration file: [Win32: '{}' ({})], default configuration will be used", lastError.GetMessage(), lastError.GetValue());
 			}
 			readStream = nullptr;
 
 			// Restore the default config on disk and load it
-			Log(wxS("Restoring default configuration"));
+			Log("Restoring default configuration");
 
 			auto defaultXML = kxf::DynamicLibrary::GetCurrentModule().GetResource("XML", kxf::ToString(IDR_XML_DEFAULT_CONFIGURATION));
 			if (m_Config.Load(std::string_view(reinterpret_cast<const char*>(defaultXML.data()), defaultXML.size())))
 			{
-				LogIndent(1, wxS("Default configuration successfully loaded"));
+				LogIndent(1, "Default configuration successfully loaded");
 
 				auto writeStream = m_FileSystem.OpenToWrite(g_ConfigFileName);
 				if (writeStream && writeStream->WriteAll(defaultXML.data(), defaultXML.size_bytes()))
 				{
-					LogIndent(1, wxS("Default configuration successfully saved to disk"));
+					LogIndent(1, "Default configuration successfully saved to disk");
 				}
 				else
 				{
 					auto lastError = kxf::Win32Error::GetLastError();
-					LogIndent(1, wxS("Couldn't save default configuration to disk: [Win32: '{}' ({})]"), lastError.GetMessage(), lastError.GetValue());
+					LogIndent(1, "Couldn't save default configuration to disk: [Win32: '{}' ({})]", lastError.GetMessage(), lastError.GetValue());
 				}
 			}
 			else
 			{
-				LogIndent(1, wxS("Couldn't load default configuration"));
+				LogIndent(1, "Couldn't load default configuration");
 			}
 		}
 
 		m_OriginalLibraryPath = [&]()
 		{
-			kxf::String path = m_Config.QueryElement(wxS("xSE/PluginPreloader/OriginalLibrary")).GetValue();
+			kxf::String path = m_Config.QueryElement("xSE/PluginPreloader/OriginalLibrary").GetValue();
 			if (path.IsEmpty())
 			{
-				Log(wxS("Original library path is not set, using default '{}'"), GetOriginalLibraryDefaultPath().GetFullPath());
+				Log("Original library path is not set, using default '{}'", GetOriginalLibraryDefaultPath().GetFullPath());
 			}
 			else
 			{
-				Log(wxS("Original library path is set to '{}'"), path);
+				Log("Original library path is set to '{}'", path);
 			}
 			return path;
 		}();
 
 		m_InstallExceptionHandler = [&]()
 		{
-			return m_Config.QueryElement(wxS("xSE/PluginPreloader/InstallExceptionHandler")).GetValueBool(true);
+			return m_Config.QueryElement("xSE/PluginPreloader/InstallExceptionHandler").GetValueBool(true);
 		}();
 		m_KeepExceptionHandler = [&]()
 		{
-			return m_Config.QueryElement(wxS("xSE/PluginPreloader/KeepExceptionHandler")).GetValueBool();
+			return m_Config.QueryElement("xSE/PluginPreloader/KeepExceptionHandler").GetValueBool();
 		}();
 
 		m_LoadMethod = [&]() -> decltype(m_LoadMethod)
 		{
-			kxf::XMLNode rootNode = m_Config.QueryElement(wxS("xSE/PluginPreloader/LoadMethod"));
-			kxf::String methodName = rootNode.GetAttribute(wxS("Name"));
+			kxf::XMLNode rootNode = m_Config.QueryElement("xSE/PluginPreloader/LoadMethod");
+			kxf::String methodName = rootNode.GetAttribute("Name");
 
 			if (auto method = LoadMethodFromString(methodName))
 			{
-				Log(wxS("Load method is set to '{}', loading method parameters"), methodName);
+				Log("Load method is set to '{}', loading method parameters", methodName);
 
 				kxf::XMLNode methodNode = rootNode.GetFirstChildElement(methodName);
 				switch (*method)
 				{
 					case LoadMethod::OnProcessAttach:
 					{
-						LogIndent(1, wxS("No parameters"));
+						LogIndent(1, "No parameters");
 						break;
 					}
 					case LoadMethod::OnThreadAttach:
 					{
-						auto value = methodNode.GetFirstChildElement(wxS("ThreadNumber")).GetValueInt(2);
+						auto value = methodNode.GetFirstChildElement("ThreadNumber").GetValueInt(2);
 						if (value < 0)
 						{
 							value = 0;
 						}
 						m_OnThreadAttach.ThreadNumber = static_cast<size_t>(value);
 
-						LogIndent(1, wxS("ThreadNumber = {}"), m_OnThreadAttach.ThreadNumber);
+						LogIndent(1, "ThreadNumber = {}", m_OnThreadAttach.ThreadNumber);
 						break;
 					}
 					case LoadMethod::ImportAddressHook:
 					{
-						m_ImportAddressHook.LibraryName = methodNode.GetFirstChildElement(wxS("LibraryName")).GetValue();
-						m_ImportAddressHook.FunctionName = methodNode.GetFirstChildElement(wxS("FunctionName")).GetValue();
+						m_ImportAddressHook.LibraryName = methodNode.GetFirstChildElement("LibraryName").GetValue();
+						m_ImportAddressHook.FunctionName = methodNode.GetFirstChildElement("FunctionName").GetValue();
 
-						LogIndent(1, wxS("LibraryName = {}"), m_ImportAddressHook.LibraryName);
-						LogIndent(1, wxS("FunctionName = {}"), m_ImportAddressHook.FunctionName);
+						LogIndent(1, "LibraryName = {}", m_ImportAddressHook.LibraryName);
+						LogIndent(1, "FunctionName = {}", m_ImportAddressHook.FunctionName);
 
 						break;
 					}
@@ -783,22 +783,22 @@ namespace xSE
 			}
 			else
 			{
-				Log(wxS("Unknown load method: '{}'"), methodName);
+				Log("Unknown load method: '{}'", methodName);
 				return {};
 			}
 		}();
 		m_LoadDelay = [&]()
 		{
-			return kxf::TimeSpan::Milliseconds(m_Config.QueryElement(wxS("xSE/PluginPreloader/LoadDelay")).GetValueInt(0));
+			return kxf::TimeSpan::Milliseconds(m_Config.QueryElement("xSE/PluginPreloader/LoadDelay").GetValueInt(0));
 		}();
 		m_AllowedProcessNames = [&]()
 		{
 			std::vector<kxf::String> processes;
-			for (const kxf::XMLNode& itemNode: m_Config.QueryElement(wxS("xSE/PluginPreloader/Processes")).EnumChildElements(wxS("Item")))
+			for (const kxf::XMLNode& itemNode: m_Config.QueryElement("xSE/PluginPreloader/Processes").EnumChildElements("Item"))
 			{
-				if (itemNode.GetAttributeBool(wxS("Allow")))
+				if (itemNode.GetAttributeBool("Allow"))
 				{
-					if (processes.emplace_back(itemNode.GetAttribute(wxS("Name"))).IsEmpty())
+					if (processes.emplace_back(itemNode.GetAttribute("Name")).IsEmpty())
 					{
 						processes.pop_back();
 					}
@@ -811,7 +811,7 @@ namespace xSE
 		m_PluginsLoadAllowed = CheckAllowedProcesses();
 		if (!m_PluginsLoadAllowed)
 		{
-			Log(wxS("<{}> This process is not allowed to preload plugins"), m_ExecutablePath.GetName());
+			Log("<{}> This process is not allowed to preload plugins", m_ExecutablePath.GetName());
 		}
 
 		// Load the original library
@@ -822,7 +822,7 @@ namespace xSE
 		}
 		else
 		{
-			Log(wxS("Can't load original library, terminating"));
+			Log("Can't load original library, terminating");
 		}
 	}
 	PreloadHandler::~PreloadHandler()
@@ -855,15 +855,15 @@ namespace xSE
 		{
 			static void* HookFunc(void* a1, void* a2)
 			{
-				g_Instance->Log(wxS("<ImportAddressHook> Enter hooked function"));
+				g_Instance->Log("<ImportAddressHook> Enter hooked function");
 
 				if (!g_Instance->IsPluginsLoaded())
 				{
-					g_Instance->Log(wxS("<ImportAddressHook> LoadPlugins"));
+					g_Instance->Log("<ImportAddressHook> LoadPlugins");
 					g_Instance->LoadPlugins();
 				}
 
-				g_Instance->Log(wxS("<ImportAddressHook> Calling unhooked function"));
+				g_Instance->Log("<ImportAddressHook> Calling unhooked function");
 
 				void* result = nullptr;
 				const kxf::NtStatus status = SEHTryExcept([&]()
@@ -873,11 +873,11 @@ namespace xSE
 
 				if (status)
 				{
-					g_Instance->Log(wxS("<ImportAddressHook> Unhooked function returned successfully"));
+					g_Instance->Log("<ImportAddressHook> Unhooked function returned successfully");
 				}
 				else
 				{
-					g_Instance->Log(wxS("<ImportAddressHook> Exception occurred: [NtStatus: '{}' ({})]"), status.GetMessage(), status.GetValue());
+					g_Instance->Log("<ImportAddressHook> Exception occurred: [NtStatus: '{}' ({})]", status.GetMessage(), status.GetValue());
 				}
 
 				// Remove exception handler if needed
@@ -886,7 +886,7 @@ namespace xSE
 					g_Instance->RemoveVectoredExceptionHandler();
 				}
 
-				g_Instance->Log(wxS("<ImportAddressHook> Leave hooked function"));
+				g_Instance->Log("<ImportAddressHook> Leave hooked function");
 				return result;
 			}
 		};
@@ -910,18 +910,18 @@ namespace xSE
 	{
 		if (!m_PluginsLoadAllowed)
 		{
-			Log(wxS("Plugins preload disabled for this process"));
+			Log("Plugins preload disabled for this process");
 			return false;
 		}
 
 		if (!m_PluginsLoaded)
 		{
-			Log(wxS("Loading plugins"));
+			Log("Loading plugins");
 			if (m_LoadDelay.IsPositive())
 			{
-				Log(wxS("<LoadDelay> Loading plugins is delayed by '{}' ms, waiting"), m_LoadDelay.GetMilliseconds());
+				Log("<LoadDelay> Loading plugins is delayed by '{}' ms, waiting", m_LoadDelay.GetMilliseconds());
 				::Sleep(m_LoadDelay.GetMilliseconds());
-				Log(wxS("<LoadDelay> Wait time is out, continuing loading"));
+				Log("<LoadDelay> Wait time is out, continuing loading");
 			}
 
 			DoLoadPlugins();
