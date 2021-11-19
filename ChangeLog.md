@@ -2,7 +2,7 @@
 
 # Version 0.2.5.1, 19.11.2021
 - Added experimental support for Skyrim Legendary Edition.
-- Added `InstallExceptionHandler` option to disable vetored exception handler installation (it's enabled by default).
+- Added `InstallExceptionHandler` option to disable vectored exception handler installation (it's enabled by default).
 - Default load method changed to `ImportAddressHook`.
 - Removed static link requirement for `DXGI.dll`.
 - General refactoring.
