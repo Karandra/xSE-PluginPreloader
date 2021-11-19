@@ -8,7 +8,7 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 		auto& handler = xSE::PreloadHandler::CreateInstance();
 		if (handler.IsNull())
 		{
-			handler.Log("Invalid state of PreloadHandler reported. Terminating process.");
+			handler.Log("Invalid state of 'PreloadHandler' reported. Terminating process.");
 			return FALSE;
 		}
 

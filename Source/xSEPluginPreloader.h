@@ -1,7 +1,9 @@
 #pragma once
 #include "Framework.hpp"
 #include "VectoredExceptionHandler.h"
+#include "Utility.h"
 #include <kxf/IO/IStream.h>
+#include <kxf/System/NtStatus.h>
 #include <kxf/System/DynamicLibrary.h>
 #include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/Serialization/XML.h>
@@ -39,27 +41,49 @@ namespace xSE::PluginPreloader
 			size_t ThreadNumber = 0;
 	};
 
+	template<class TSignature>
 	class ImportAddressHook final
 	{
 		private:
-			void*(__cdecl* m_UnhookedFunction)(void*, void*) = nullptr;
+			TSignature* m_UnhookedFunction = nullptr;
 
 		public:
 			kxf::String LibraryName;
 			kxf::String FunctionName;
 
 		public:
-			template<class... Args>
-			decltype(auto) CallUnhooked(Args&&... arg) noexcept
+			bool IsNull() const
 			{
-				return std::invoke(m_UnhookedFunction, std::forward<Args>(arg)...);
+				return LibraryName.IsEmpty() || FunctionName.IsEmpty();
 			}
 
-			void* GetUnhooked() const noexcept
+			template<class... Args, class R = std::invoke_result_t<TSignature, Args...>>
+			R CallUnhooked(kxf::NtStatus& status, Args&&... arg)
+			{
+				if constexpr(std::is_void_v<R>)
+				{
+					status = Utility::SEHTryExcept([&]()
+					{
+						std::invoke(m_UnhookedFunction, std::forward<Args>(arg)...);
+					});
+				}
+				else
+				{
+					R result;
+					status = Utility::SEHTryExcept([&]()
+					{
+						result = std::invoke(m_UnhookedFunction, std::forward<Args>(arg)...);
+					});
+
+					return result;
+				}
+			}
+
+			TSignature* GetUnhooked() const noexcept
 			{
 				return m_UnhookedFunction;
 			}
-			void SaveUnhooked(decltype(m_UnhookedFunction) func) noexcept
+			void SaveUnhooked(TSignature* func) noexcept
 			{
 				m_UnhookedFunction = func;
 			}
@@ -68,6 +92,7 @@ namespace xSE::PluginPreloader
 				return m_UnhookedFunction != nullptr;
 			}
 	};
+	class ImportAddressHookHandler;
 }
 
 namespace xSE
@@ -75,6 +100,7 @@ namespace xSE
 	class PreloadHandler final
 	{
 		friend BOOL APIENTRY ::DllMain(HMODULE, DWORD, LPVOID);
+		friend class PluginPreloader::ImportAddressHookHandler;
 
 		private:
 			static PreloadHandler& CreateInstance();
@@ -117,7 +143,12 @@ namespace xSE
 			std::optional<LoadMethod> m_LoadMethod;
 			PluginPreloader::OnProcessAttach m_OnProcessAttach;
 			PluginPreloader::OnThreadAttach m_OnThreadAttach;
-			PluginPreloader::ImportAddressHook m_ImportAddressHook;
+
+			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
+			PluginPreloader::ImportAddressHook<void*(__cdecl)(void*, void*)> m_ImportAddressHook;
+			#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
+			PluginPreloader::ImportAddressHook<char*(__stdcall)()> m_ImportAddressHook;
+			#endif
 
 			// Log
 			std::unique_ptr<kxf::IOutputStream> m_LogStream;

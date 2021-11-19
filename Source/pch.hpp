@@ -5,3 +5,5 @@
 
 #include "Framework.hpp"
 #include <kxf/pch.hpp>
+
+#include "resource.h"

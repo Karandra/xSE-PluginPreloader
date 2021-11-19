@@ -1,7 +1,8 @@
 #include "pch.hpp"
 #include "xSEPluginPreloader.h"
 #include "ScriptExtenderDefinesBase.h"
-#include "resource.h"
+#include "Detour.h"
+
 #include <kxf/IO/StreamReaderWriter.h>
 #include <kxf/Log/Common.h>
 #include <kxf/Localization/Locale.h>
@@ -10,27 +11,11 @@
 #include <kxf/System/ShellOperations.h>
 #include <kxf/System/Win32Error.h>
 #include <kxf/System/NtStatus.h>
+#include <kxf/System/NativeAPI.h>
 #include <kxf/Utility/System.h>
 #include <kxf/Utility/Container.h>
 #include <kxf/Utility/ScopeGuard.h>
 #include <wx/module.h>
-
-#include "Nukem Detours/Detours.h"
-#if _WIN64
-
-namespace NukemDetoursBase = Detours;
-namespace NukemDetours = Detours::X64;
-using NukemDetoursOpt = Detours::X64Option;
-#pragma comment(lib, "Nukem Detours/x64/detours.lib")
-
-#else
-
-namespace NukemDetoursBase = Detours;
-namespace NukemDetours = Detours::X86;
-using NukemDetoursOpt = Detours::X86Option;
-#pragma comment(lib, "Nukem Detours/x86/detours.lib")
-
-#endif
 
 namespace
 {
@@ -38,20 +23,6 @@ namespace
 
 	constexpr auto g_ConfigFileName = "xSE PluginPreloader.xml";
 	constexpr auto g_LogFileName = "xSE PluginPreloader.log";
-
-	template<class TFunc>
-	__declspec(noinline) uint32_t SEHTryExcept(TFunc&& func)
-	{
-		__try
-		{
-			std::invoke(func);
-			return 0;
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER)
-		{
-			return ::GetExceptionCode();
-		}
-	}
 
 	void LogLoadStatus(const kxf::FSPath& path, xSE::PluginStatus status)
 	{
@@ -128,32 +99,75 @@ namespace
 	}
 }
 
-namespace Detour
+namespace xSE::PluginPreloader
 {
-	template<class T> requires(std::is_function_v<T>)
-	T* FunctionIAT(T* func, const char* libraryName, const char* functionName) noexcept
+	class ImportAddressHookHandler final
 	{
-		const uintptr_t base = reinterpret_cast<uintptr_t>(::GetModuleHandleW(nullptr));
-		return reinterpret_cast<T*>(NukemDetoursBase::IATHook(base, libraryName, functionName, reinterpret_cast<uintptr_t>(func)));
-	}
+		private:
+			static void HookCommonBefore()
+			{
+				g_Instance->Log("<ImportAddressHook> Enter hooked function");
 
-	template<class T> requires(std::is_function_v<T>)
-	T FunctionFromModule(HMODULE moduleBase, T func, uintptr_t offset) noexcept
-	{
-		return reinterpret_cast<T*>(NukemDetours::DetourFunction(reinterpret_cast<uintptr_t>(moduleBase) + offset, reinterpret_cast<uintptr_t>(func)));
-	}
+				if (!g_Instance->IsPluginsLoaded())
+				{
+					g_Instance->Log("<ImportAddressHook> LoadPlugins");
+					g_Instance->LoadPlugins();
+				}
+				else
+				{
+					g_Instance->Log("<ImportAddressHook> Plugins are already loaded");
+				}
 
-	template<class T> requires(std::is_function_v<T>)
-	T* FunctionFromModuleByName(const wchar_t* libraryName, T* func, uintptr_t offset) noexcept
-	{
-		return FunctionFromModule(::GetModuleHandleW(libraryName), func, offset);
-	}
+				g_Instance->Log("<ImportAddressHook> Calling unhooked function");
+			}
+			static void HookCommonAfter(const kxf::NtStatus& status)
+			{
+				if (status)
+				{
+					g_Instance->Log("<ImportAddressHook> Unhooked function returned successfully");
+				}
+				else
+				{
+					g_Instance->Log("<ImportAddressHook> Exception occurred while executing the unhooked function: [NtStatus: '{}' ({})]", status.GetMessage(), status.GetValue());
+				}
 
-	template<class T> requires(std::is_function_v<T>)
-	T* FunctionFromExecutingModule(T* func, uintptr_t offset) noexcept
-	{
-		return FunctionFromModuleByName(nullptr, func, offset);
-	}
+				// Remove exception handler if needed
+				if (!g_Instance->m_KeepExceptionHandler)
+				{
+					g_Instance->RemoveVectoredExceptionHandler();
+				}
+
+				g_Instance->Log("<ImportAddressHook> Leave hooked function");
+			}
+
+			template<class TRet, class... Args>
+			static TRet InvokeHook(Args&&... args)
+			{
+				HookCommonBefore();
+				
+				auto status = kxf::NtStatus::Fail();
+				kxf::Utility::ScopeGuard atExit = [&]()
+				{
+					HookCommonAfter(status);
+				};
+				return g_Instance->m_ImportAddressHook.CallUnhooked(status, std::forward<Args>(args)...);
+			}
+
+		public:
+			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
+			static void* __cdecl HookFunc(void* a1, void* a2)
+			{
+				return InvokeHook<void*>(a1, a2);
+			}
+			#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
+			static char* __stdcall HookFunc()
+			{
+				return InvokeHook<char*>();
+			}
+			#else
+				#error "Unsupported configuration"
+			#endif
+	};
 }
 
 namespace xSE
@@ -177,7 +191,7 @@ namespace xSE
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return "0.2.5";
+		return "0.2.5.1";
 	}
 
 	PreloadHandler& PreloadHandler::GetInstance()
@@ -201,7 +215,7 @@ namespace xSE
 	{
 		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
 		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "IpHlpAPI.dll";
-		#elif xSE_PLATFORM_NVSE
+		#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "WinMM.dll";
 		#else
 		#error "Unsupported configuration"
@@ -252,7 +266,7 @@ namespace xSE
 		PluginStatus pluginStatus = PluginStatus::FailedLoad;
 
 		// Load plugin library
-		const kxf::NtStatus loadStatus = SEHTryExcept([&]()
+		const kxf::NtStatus loadStatus = Utility::SEHTryExcept([&]()
 		{
 			if (pluginLibrary.Load(path))
 			{
@@ -271,10 +285,10 @@ namespace xSE
 		{
 			if (pluginLibrary)
 			{
-				LogIndent(1, "<{}> Library is loaded, attempt to call initialization routine", path.GetName());
+				LogIndent(1, "<{}> Library is loaded, attempt to call the initialization routine", path.GetName());
 
 				// Call initialization routine
-				const kxf::NtStatus initializeStatus = SEHTryExcept([&]()
+				const kxf::NtStatus initializeStatus = Utility::SEHTryExcept([&]()
 				{
 					using TInitialize = void(__cdecl*)(void);
 					if (auto initalize = pluginLibrary.GetExportedFunction<TInitialize>("Initialize"))
@@ -318,7 +332,7 @@ namespace xSE
 	}
 	void PreloadHandler::OnPluginLoadFailed(const kxf::FSPath& path, size_t logIndentOffset)
 	{
-		const kxf::NtStatus status = SEHTryExcept([&]()
+		const kxf::NtStatus status = Utility::SEHTryExcept([&]()
 		{
 			LogIndent(logIndentOffset + 1, "<{}> Trying to read library dependencies list", path.GetName());
 
@@ -377,9 +391,9 @@ namespace xSE
 						result += ", ";
 					}
 
-					result += wxS('\'');
+					result += '\'';
 					result += name;
-					result += wxS('\'');
+					result += '\'';
 				}
 				return result;
 			}
@@ -585,6 +599,19 @@ namespace xSE
 		}
 
 		// Register modules
+		using kxf::NativeAPISet;
+
+		auto& loader = kxf::NativeAPILoader::GetInstance();
+		loader.LoadLibraries(
+		{
+			NativeAPISet::NtDLL,
+			NativeAPISet::Kernel32,
+			NativeAPISet::KernelBase,
+			NativeAPISet::User32,
+			NativeAPISet::ShlWAPI,
+			NativeAPISet::DbgHelp
+		});
+
 		wxModule::RegisterModules();
 		if (!wxModule::InitializeModules())
 		{
@@ -734,6 +761,8 @@ namespace xSE
 
 	bool PreloadHandler::HookImportTable()
 	{
+		using namespace PluginPreloader;
+
 		if (!m_PluginsLoadAllowed)
 		{
 			Log("<ImportAddressHook> Plugins preload disabled for this process, skipping hook installation");
@@ -742,58 +771,18 @@ namespace xSE
 
 		if (m_HookDelay.IsPositive())
 		{
-			Log("<HookDelay> Hooking is delayed by '{}' ms, waiting", m_HookDelay.GetMilliseconds());
+			Log("<HookDelay> Hooking is delayed by '{}' ms, waiting...", m_HookDelay.GetMilliseconds());
 			::Sleep(m_HookDelay.GetMilliseconds());
 			Log("<HookDelay> Wait time is out, continuing hooking");
 		}
 
 		Log("<ImportAddressHook> Hooking function '{}' from library '{}'", m_ImportAddressHook.FunctionName, m_ImportAddressHook.LibraryName);
-
-		struct ImportHook final
-		{
-			static void* HookFunc(void* a1, void* a2)
-			{
-				g_Instance->Log("<ImportAddressHook> Enter hooked function");
-
-				if (!g_Instance->IsPluginsLoaded())
-				{
-					g_Instance->Log("<ImportAddressHook> LoadPlugins");
-					g_Instance->LoadPlugins();
-				}
-
-				g_Instance->Log("<ImportAddressHook> Calling unhooked function");
-
-				void* result = nullptr;
-				const kxf::NtStatus status = SEHTryExcept([&]()
-				{
-					result = g_Instance->m_ImportAddressHook.CallUnhooked(a1, a2);
-				});
-
-				if (status)
-				{
-					g_Instance->Log("<ImportAddressHook> Unhooked function returned successfully");
-				}
-				else
-				{
-					g_Instance->Log("<ImportAddressHook> Exception occurred: [NtStatus: '{}' ({})]", status.GetMessage(), status.GetValue());
-				}
-
-				// Remove exception handler if needed
-				if (!g_Instance->m_KeepExceptionHandler)
-				{
-					g_Instance->RemoveVectoredExceptionHandler();
-				}
-
-				g_Instance->Log("<ImportAddressHook> Leave hooked function");
-				return result;
-			}
-		};
-		m_ImportAddressHook.SaveUnhooked(Detour::FunctionIAT(&ImportHook::HookFunc, m_ImportAddressHook.LibraryName.nc_str(), m_ImportAddressHook.FunctionName.nc_str()));
+		m_ImportAddressHook.SaveUnhooked(Detour::FunctionIAT(&ImportAddressHookHandler::HookFunc, m_ImportAddressHook.LibraryName.nc_str(), m_ImportAddressHook.FunctionName.nc_str()));
 
 		if (m_ImportAddressHook.IsHooked())
 		{
 			LogIndent(1, "Success [Hooked={:#0{}x}], [Unhooked={:#0{}x}]",
-					  reinterpret_cast<size_t>(&ImportHook::HookFunc), sizeof(void*),
+					  reinterpret_cast<size_t>(&ImportAddressHookHandler::HookFunc), sizeof(void*),
 					  reinterpret_cast<size_t>(m_ImportAddressHook.GetUnhooked()), sizeof(void*)
 			);
 			return true;
@@ -817,7 +806,7 @@ namespace xSE
 			Log("Loading plugins");
 			if (m_LoadDelay.IsPositive())
 			{
-				Log("<LoadDelay> Loading plugins is delayed by '{}' ms, waiting", m_LoadDelay.GetMilliseconds());
+				Log("<LoadDelay> Loading plugins is delayed by '{}' ms, waiting...", m_LoadDelay.GetMilliseconds());
 				::Sleep(m_LoadDelay.GetMilliseconds());
 				Log("<LoadDelay> Wait time is out, continuing loading");
 			}
@@ -930,7 +919,7 @@ namespace xSE
 					case LoadMethod::OnProcessAttach:
 					{
 						LogIndent(1, "No parameters");
-						break;
+						return *method;
 					}
 					case LoadMethod::OnThreadAttach:
 					{
@@ -942,7 +931,7 @@ namespace xSE
 						m_OnThreadAttach.ThreadNumber = static_cast<size_t>(value);
 
 						LogIndent(1, "ThreadNumber = {}", m_OnThreadAttach.ThreadNumber);
-						break;
+						return *method;
 					}
 					case LoadMethod::ImportAddressHook:
 					{
@@ -952,21 +941,30 @@ namespace xSE
 						LogIndent(1, "LibraryName = {}", m_ImportAddressHook.LibraryName);
 						LogIndent(1, "FunctionName = {}", m_ImportAddressHook.FunctionName);
 
+						if (!m_ImportAddressHook.IsNull())
+						{
+							return *method;
+						}
 						break;
 					}
 				};
-				return *method;
 			}
 			else
 			{
 				Log("Unknown load method: '{}'", methodName);
-				return {};
 			}
+			return {};
 		}();
+
 		m_LoadDelay = [&]()
 		{
 			return kxf::TimeSpan::Milliseconds(m_Config.QueryElement("xSE/PluginPreloader/LoadDelay").GetValueInt(0));
 		}();
+		m_HookDelay = [&]()
+		{
+			return kxf::TimeSpan::Milliseconds(m_Config.QueryElement("xSE/PluginPreloader/HookDelay").GetValueInt(0));
+		}();
+
 		m_AllowedProcessNames = [&]()
 		{
 			std::vector<kxf::String> processes;

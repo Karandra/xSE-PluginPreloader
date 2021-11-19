@@ -79,7 +79,9 @@ namespace xSE
 	}
 	void PreloadHandler::LoadOriginalLibraryFunctions()
 	{
-		#if xSE_PLATFORM_F4SE || xSE_PLATFORM_SKSE64
+		std::fill_n(g_OriginalFunctions, std::size(g_OriginalFunctions), nullptr);
+
+		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE 
 
 		LoadFunc_IpHlpAPI(AddIPAddress);
 		LoadFunc_IpHlpAPI(AllocateAndGetInterfaceInfoFromStack);
@@ -344,7 +346,7 @@ namespace xSE
 		LoadFunc_IpHlpAPI(if_nametoindex);
 		LoadFunc_IpHlpAPI(register_icmp);
 
-		#elif xSE_PLATFORM_NVSE
+		#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 
 		LoadFunc_WinMM(Ordinal2);
 		LoadFunc_WinMM(CloseDriver);
@@ -538,7 +540,7 @@ namespace xSE
 
 extern "C"
 {
-	#if xSE_PLATFORM_F4SE|| xSE_PLATFORM_SKSE64
+	#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
 
 	DefineFunc_IpHlpAPI(AddIPAddress);
 	DefineFunc_IpHlpAPI(AllocateAndGetInterfaceInfoFromStack);
@@ -803,7 +805,7 @@ extern "C"
 	DefineFunc_IpHlpAPI(if_nametoindex);
 	DefineFunc_IpHlpAPI(register_icmp);
 
-	#elif xSE_PLATFORM_NVSE
+	#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 
 	DefineFunc_WinMM(Ordinal2);
 	DefineFunc_WinMM(CloseDriver);

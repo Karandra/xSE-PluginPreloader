@@ -32,6 +32,9 @@
     <ClCompile Include="Source\VectoredExceptionHandler.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Detour.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -67,6 +70,12 @@
     <ClInclude Include="Source\VectoredExceptionHandler.h">
       <Filter>Source</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Utility.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Detour.h">
+      <Filter>Source</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="Source\UnconditionalJump.asm">
@@ -97,6 +106,9 @@
       <Filter>Resources\Exports</Filter>
     </None>
     <None Include="Exports\SKSE64.def">
+      <Filter>Resources\Exports</Filter>
+    </None>
+    <None Include="Exports\SKSE.def">
       <Filter>Resources\Exports</Filter>
     </None>
   </ItemGroup>
