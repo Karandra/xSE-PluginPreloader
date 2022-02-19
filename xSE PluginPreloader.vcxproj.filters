@@ -35,6 +35,9 @@
     <ClCompile Include="Source\Detour.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Application.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -74,6 +77,9 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Detour.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Application.h">
       <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>

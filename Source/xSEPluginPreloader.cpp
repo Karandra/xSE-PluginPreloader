@@ -1,8 +1,10 @@
 #include "pch.hpp"
 #include "xSEPluginPreloader.h"
 #include "ScriptExtenderDefinesBase.h"
+#include "Application.h"
 #include "Detour.h"
 
+#include <kxf/Application/GUIApplication.h>
 #include <kxf/IO/StreamReaderWriter.h>
 #include <kxf/Log/Common.h>
 #include <kxf/Localization/Locale.h>
@@ -12,6 +14,8 @@
 #include <kxf/System/Win32Error.h>
 #include <kxf/System/NtStatus.h>
 #include <kxf/System/NativeAPI.h>
+#include <kxf/System/DynamicLibraryEvent.h>
+#include <kxf/Threading/Common.h>
 #include <kxf/Utility/System.h>
 #include <kxf/Utility/Container.h>
 #include <kxf/Utility/ScopeGuard.h>
@@ -191,7 +195,7 @@ namespace xSE
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return "0.2.5.1";
+		return "0.2.5.2";
 	}
 
 	PreloadHandler& PreloadHandler::GetInstance()
@@ -454,14 +458,17 @@ namespace xSE
 			if (addTimestamp)
 			{
 				auto timeStamp = kxf::DateTime::Now();
-				kxf::String timeStampFormatted = kxf::Format("[{}:{:0>3}] ", timeStamp.FormatISOCombined(' '), timeStamp.GetMillisecond());
+				kxf::String timeStampFormatted = kxf::Format("[{}:{:0>3}|TID:{:0>9}] ", timeStamp.FormatISOCombined(' '), timeStamp.GetMillisecond(), kxf::Threading::GetCurrentThreadID());
 
 				logString.Prepend(std::move(timeStampFormatted));
 			}
+			logString += '\n';
 
-			writer.WriteStringUTF8(logString.Append(wxS('\n')));
-			m_LogStream->Flush();
-
+			if (kxf::WriteLockGuard lock(m_LogLock); true)
+			{
+				writer.WriteStringUTF8(logString);
+				m_LogStream->Flush();
+			}
 			return logString.length();
 		}
 		return 0;
@@ -618,7 +625,7 @@ namespace xSE
 			LogIndent(1, "Initializing framework: failed");
 			return false;
 		}
-		return true;
+		return m_Application->OnInit();
 	}
 	void PreloadHandler::LogEnvironmentInfo() const
 	{
@@ -649,11 +656,11 @@ namespace xSE
 		Log("<Current module> Binary: '{}'", currentModule.GetFilePath().GetFullPath());
 		Log("<Current module> {} v{} loaded", GetLibraryName(), GetLibraryVersion().ToString());
 	}
-	void PreloadHandler::LogHostProcessInfo() const
+	kxf::ExecutableVersionResource PreloadHandler::LogHostProcessInfo() const
 	{
 		Log("<Host process> Binary: '{}'", m_ExecutablePath.GetFullPath());
 
-		const kxf::ExecutableVersionResource resourceInfo(m_ExecutablePath);
+		kxf::ExecutableVersionResource resourceInfo(m_ExecutablePath);
 		if (resourceInfo)
 		{
 			Log("<Host process> Version: {}", resourceInfo.GetAnyVersion());
@@ -663,23 +670,68 @@ namespace xSE
 			auto lastError = kxf::Win32Error::GetLastError();
 			Log("<Host process> Couldn't load host process binary. [Win32: '{}' ({})]", lastError.GetMessage(), lastError.GetValue());
 		}
+
+		return resourceInfo;
 	}
-	void PreloadHandler::LogScriptExtenderInfo() const
+	kxf::ExecutableVersionResource PreloadHandler::LogScriptExtenderInfo(const kxf::ExecutableVersionResource& hostResourceInfo) const
 	{
 		const kxf::FSPath loaderPath = m_FileSystem.ResolvePath(xSE_FOLDER_NAME_W "_Loader.exe");
 		Log("<Script Extender> Platform: {}", xSE_NAME_W);
-		Log("<Script Extender> Binary: '{}'", loaderPath.GetFullPath());
-
-		const kxf::ExecutableVersionResource resourceInfo(loaderPath);
-		if (resourceInfo)
+		Log("<Script Extender> Loader: '{}'", loaderPath.GetFullPath());
+		if (!m_FileSystem.FileExist(loaderPath))
 		{
-			Log("<Script Extender> Version: {}", resourceInfo.GetAnyVersion());
+			LogIndent(1, "File not found: '{}'", loaderPath.GetFullPath());
+		}
+
+		const auto versionString = [&]()
+		{
+			auto versionString = hostResourceInfo.GetAnyVersion();
+
+			// Remove any version components after the third one
+			size_t count = 0;
+			for (size_t i = 0; i < versionString.length(); i++)
+			{
+				if (versionString[i] == '.')
+				{
+					count++;
+					if (count == 3)
+					{
+						versionString.Truncate(i);
+						break;
+					}
+				}
+			}
+
+			versionString.Replace('.', '_');
+			return versionString;
+		}();
+		auto libraryPath = m_FileSystem.ResolvePath(kxf::Format("{}_{}.dll", xSE_FOLDER_NAME_W, versionString));
+		Log("<Script Extender> Library: '{}'", libraryPath.GetFullPath());
+		if (!m_FileSystem.FileExist(libraryPath))
+		{
+			LogIndent(1, "File not found: '{}'", libraryPath.GetFullPath());
+		}
+
+		m_Application->Bind(kxf::DynamicLibraryEvent::EvtLoaded, [this, libraryPath](kxf::DynamicLibraryEvent& event)
+		{
+			if (event.GetBaseName().GetName().IsSameAs(libraryPath.GetName(), kxf::StringActionFlag::IgnoreCase))
+			{
+				Log("<Script Extender> {} library loaded", xSE_NAME_W);
+			}
+		}, kxf::BindEventFlag::AlwaysSkip);
+
+		kxf::ExecutableVersionResource extenderResourceInfo(loaderPath);
+		if (extenderResourceInfo)
+		{
+			Log("<Script Extender> Version: {}", extenderResourceInfo.GetAnyVersion());
 		}
 		else
 		{
 			auto lastError = kxf::Win32Error::GetLastError();
 			Log("<Script Extender> Couldn't load {} binary, probably not installed: [Win32: '{}' ({})]", xSE_NAME_W, lastError.GetMessage(), lastError.GetValue());
 		}
+
+		return extenderResourceInfo;
 	}
 
 	bool PreloadHandler::OnDLLMain(HMODULE handle, uint32_t event)
@@ -822,6 +874,8 @@ namespace xSE
 	PreloadHandler::PreloadHandler()
 		:m_FileSystem(kxf::NativeFileSystem::GetExecutingModuleRootDirectory())
 	{
+		m_Application = std::make_shared<Application>(*this);
+
 		// Initialize plugins directory
 		m_PluginsDirectory = m_FileSystem.GetLookupDirectory() / "Data" / xSE_FOLDER_NAME_W / "Plugins";
 		m_ExecutablePath = kxf::DynamicLibrary::GetExecutingModule().GetFilePath();
@@ -831,10 +885,14 @@ namespace xSE
 		Log("Log opened");
 
 		// Init framework
-		InitializeFramework();
+		if (!m_Application->OnCreate() || !InitializeFramework())
+		{
+			Log("Error occurred during the initialization process");
+			return;
+		}
 		LogCurrentModuleInfo();
-		LogHostProcessInfo();
-		LogScriptExtenderInfo();
+		auto hostResourceInfo = LogHostProcessInfo();
+		auto extenderResourceInfo = LogScriptExtenderInfo(hostResourceInfo);
 		LogEnvironmentInfo();
 
 		// Load config

@@ -480,6 +480,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Source\Application.h" />
     <ClInclude Include="Source\Detour.h" />
     <ClInclude Include="Source\Framework.hpp" />
     <ClInclude Include="Source\pch.hpp" />
@@ -494,6 +495,7 @@
     <ClInclude Include="Source\ScriptExtenderDefinesBase.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Application.cpp" />
     <ClCompile Include="Source\Detour.cpp" />
     <ClCompile Include="Source\DLLMain.cpp" />
     <ClCompile Include="Source\pch.cpp">

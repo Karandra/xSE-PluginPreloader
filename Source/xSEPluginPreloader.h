@@ -5,13 +5,21 @@
 #include <kxf/IO/IStream.h>
 #include <kxf/System/NtStatus.h>
 #include <kxf/System/DynamicLibrary.h>
+#include <kxf/Threading/ReadWriteLock.h>
 #include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/Serialization/XML.h>
 
 BOOL APIENTRY DllMain(HMODULE, DWORD, LPVOID);
 
+namespace kxf
+{
+	class ExecutableVersionResource;
+}
+
 namespace xSE
 {
+	class Application;
+
 	enum class PluginStatus: uint32_t
 	{
 		Loaded,
@@ -131,6 +139,8 @@ namespace xSE
 			std::atomic<size_t> m_ThreadAttachCount = 0;
 			bool m_WatchThreadAttach = false;
 
+			std::shared_ptr<Application> m_Application;
+
 			// Config
 			kxf::XMLDocument m_Config;
 			kxf::FSPath m_OriginalLibraryPath;
@@ -151,6 +161,7 @@ namespace xSE
 			#endif
 
 			// Log
+			mutable kxf::ReadWriteLock m_LogLock;
 			std::unique_ptr<kxf::IOutputStream> m_LogStream;
 
 		private:
@@ -179,8 +190,8 @@ namespace xSE
 			bool InitializeFramework();
 			void LogEnvironmentInfo() const;
 			void LogCurrentModuleInfo() const;
-			void LogHostProcessInfo() const;
-			void LogScriptExtenderInfo() const;
+			kxf::ExecutableVersionResource LogHostProcessInfo() const;
+			kxf::ExecutableVersionResource LogScriptExtenderInfo(const kxf::ExecutableVersionResource& hostResourceInfo) const;
 
 			bool OnDLLMain(HMODULE handle, uint32_t event);
 			bool DisableThreadLibraryCalls(HMODULE handle);
