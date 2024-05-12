@@ -194,7 +194,7 @@ namespace xSE
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return "0.2.5.2";
+		return "0.3";
 	}
 
 	PreloadHandler& PreloadHandler::GetInstance()
