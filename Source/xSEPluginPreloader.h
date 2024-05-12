@@ -239,7 +239,7 @@ namespace xSE
 				}
 				else
 				{
-					static_assert(false);
+					static_assert(sizeof(LoadMethod*) == nullptr);
 				}
 			}
 

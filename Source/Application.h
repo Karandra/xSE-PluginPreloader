@@ -14,7 +14,6 @@ namespace xSE
 	{
 		private:
 			PreloadHandler& m_PreloadHandler;
-
 			kxf::AndroidLocalizationPackage m_LocalizationPackage;
 			
 		public:

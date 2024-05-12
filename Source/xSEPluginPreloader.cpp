@@ -16,7 +16,6 @@
 #include <kxf/System/NativeAPI.h>
 #include <kxf/System/DynamicLibraryEvent.h>
 #include <kxf/Threading/Common.h>
-#include <kxf/Utility/System.h>
 #include <kxf/Utility/Container.h>
 #include <kxf/Utility/ScopeGuard.h>
 #include <wx/module.h>
@@ -632,8 +631,7 @@ namespace xSE
 		if (const auto versionInfo = kxf::System::GetVersionInfo())
 		{
 			const kxf::System::KernelVersion kernel = versionInfo->Kernel;
-			const bool is64Bit = kxf::System::Is64Bit();
-			Log("<Environment> Operation system: '{}' {}.{}.{}", kxf::System::GetProductName(*versionInfo, is64Bit), kernel.Major, kernel.Minor, kernel.Build);
+			Log("<Environment> Operation system: '{}' {}.{}.{}", kxf::System::GetProductName(*versionInfo), kernel.Major, kernel.Minor, kernel.Build);
 
 			if (kernel.ServicePackMajor > 0)
 			{
