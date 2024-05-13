@@ -133,13 +133,13 @@
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>IpHlpAPI</TargetName>
+    <TargetName>WinHTTP</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SKSE64|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>IpHlpAPI</TargetName>
+    <TargetName>WinHTTP</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -157,13 +157,13 @@
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>IpHlpAPI</TargetName>
+    <TargetName>WinHTTP</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SKSE64|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(ProjectDir)Junk\$(Configuration) $(Platform)\</IntDir>
     <OutDir>$(ProjectDir)Build\$(Configuration) $(Platform)\</OutDir>
-    <TargetName>IpHlpAPI</TargetName>
+    <TargetName>WinHTTP</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='NVSE|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -487,6 +487,7 @@
     <ClInclude Include="Source\ProxyFunctions\bink2w64.h" />
     <ClInclude Include="Source\ProxyFunctions\DInput8.h" />
     <ClInclude Include="Source\ProxyFunctions\IpHlpAPI.h" />
+    <ClInclude Include="Source\ProxyFunctions\WinHTTP.h" />
     <ClInclude Include="Source\ProxyFunctions\WinMM.h" />
     <ClInclude Include="Source\ProxyFunctions\X3DAudio17.h" />
     <ClInclude Include="Source\Utility.h" />

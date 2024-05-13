@@ -263,6 +263,6 @@ namespace xSE::PluginPreloader::Library::IpHlpAPI
 		do_echo_req,
 		if_indextoname,
 		if_nametoindex,
-		register_icmp,
+		register_icmp
 	};
 };

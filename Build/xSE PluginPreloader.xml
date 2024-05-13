@@ -24,7 +24,7 @@
 
 				## Remarks:
 					### Fallout 4:
-						LibraryName: MSVCR110.dll
+						LibraryName: api-ms-win-crt-runtime-l1-1-0.dll
 						FunctionName: _initterm_e
 							The function *must* have a signature compatible with 'void*(__cdecl*)(void*, void*)'.
 

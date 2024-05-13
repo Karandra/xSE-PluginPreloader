@@ -182,6 +182,6 @@ namespace xSE::PluginPreloader::Library::WinMM
 		waveOutSetPlaybackRate,
 		waveOutSetVolume,
 		waveOutUnprepareHeader,
-		waveOutWrite,
+		waveOutWrite
 	};
 };

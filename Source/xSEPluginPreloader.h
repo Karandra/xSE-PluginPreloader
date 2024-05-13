@@ -121,8 +121,9 @@ namespace xSE
 			static PreloadHandler& GetInstance();
 			static bool HasInstance();
 
-			static size_t GetFunctionsCount() noexcept;
 			static void** GetFunctions() noexcept;
+			static size_t GetFunctionsCount() noexcept;
+			static size_t GetFunctionsEffectiveCount() noexcept;
 
 		private:
 			// General

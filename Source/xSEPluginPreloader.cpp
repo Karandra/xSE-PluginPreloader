@@ -217,7 +217,7 @@ namespace xSE
 	kxf::FSPath PreloadHandler::GetOriginalLibraryDefaultPath() const
 	{
 		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
-		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "IpHlpAPI.dll";
+		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "WinHTTP.dll";
 		#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "WinMM.dll";
 		#else
