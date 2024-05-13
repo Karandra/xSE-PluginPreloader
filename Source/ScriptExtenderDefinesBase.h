@@ -21,7 +21,9 @@ enum xSE_PlatfromGenerationEnum: int
 #if xSE_PLATFORM_MWSE
 
 #define xSE_NAME MWSE
+#define xSE_GAME_NAME Morrowind
 #define xSE_FOLDER_NAME MWSE
+#define xSE_CONFIG_FOLDER_NAME Morrowind
 #define xSE_PACKED_VERSION PACKED_MWSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_MWSE
 
@@ -31,7 +33,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_OBSE
 
 #define xSE_NAME OBSE
+#define xSE_GAME_NAME Oblivion
 #define xSE_FOLDER_NAME OBSE
+#define xSE_CONFIG_FOLDER_NAME Oblivion
 #define xSE_PACKED_VERSION OBSE_VERSION_INTEGER
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_OBSE
 
@@ -41,7 +45,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_FOSE
 
 #define xSE_NAME FOSE
+#define xSE_GAME_NAME Fallout 3
 #define xSE_FOLDER_NAME FOSE
+#define xSE_CONFIG_FOLDER_NAME Fallout3
 #define xSE_PACKED_VERSION FOSE_VERSION_INTEGER
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_FOSE
 
@@ -51,7 +57,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_NVSE
 
 #define xSE_NAME NVSE
+#define xSE_GAME_NAME Fallout: New Vegas
 #define xSE_FOLDER_NAME NVSE
+#define xSE_CONFIG_FOLDER_NAME FalloutNV
 #define xSE_PACKED_VERSION NVSE_VERSION_INTEGER
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_NVSE
 
@@ -61,7 +69,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_SKSE
 
 #define xSE_NAME SKSE
+#define xSE_GAME_NAME Skyrim
 #define xSE_FOLDER_NAME SKSE
+#define xSE_CONFIG_FOLDER_NAME Skyrim
 #define xSE_PACKED_VERSION PACKED_SKSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_SKSE
 
@@ -71,7 +81,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_SKSE64
 
 #define xSE_NAME SKSE64
+#define xSE_GAME_NAME Skyrim Special Edition
 #define xSE_FOLDER_NAME SKSE
+#define xSE_CONFIG_FOLDER_NAME Skyrim Special Edition
 #define xSE_PACKED_VERSION PACKED_SKSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_SKSE64
 
@@ -82,7 +94,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_SKSEVR
 
 #define xSE_NAME SKSEVR
+#define xSE_GAME_NAME Skyrim VR
 #define xSE_FOLDER_NAME SKSE
+#define xSE_CONFIG_FOLDER_NAME Skyrim VR
 #define xSE_PACKED_VERSION PACKED_SKSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_SKSEVR
 
@@ -92,7 +106,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_F4SE
 
 #define xSE_NAME F4SE
+#define xSE_GAME_NAME Fallout 4
 #define xSE_FOLDER_NAME F4SE
+#define xSE_CONFIG_FOLDER_NAME Fallout4
 #define xSE_PACKED_VERSION PACKED_F4SE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_F4SE
 
@@ -103,7 +119,9 @@ enum xSE_PlatfromGenerationEnum: int
 #elif xSE_PLATFORM_SFSE
 
 #define xSE_NAME SFSE
+#define xSE_GAME_NAME Starfield
 #define xSE_FOLDER_NAME SFSE
+#define xSE_CONFIG_FOLDER_NAME Starfield
 #define xSE_PACKED_VERSION PACKED_SFSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_SFSE
 
@@ -114,7 +132,9 @@ enum xSE_PlatfromGenerationEnum: int
 #else
 
 #define xSE_NAME None
+#define xSE_GAME_NAME None
 #define xSE_FOLDER_NAME None
+#define xSE_CONFIG_FOLDER_NAME None
 #define xSE_PACKED_VERSION 0
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_NONE
 
@@ -123,8 +143,14 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_NAME_A _CRT_STRINGIZE(xSE_NAME)
 #define xSE_NAME_W _CRT_WIDE(xSE_NAME_A)
 
+#define xSE_GAME_NAME_A _CRT_STRINGIZE(xSE_GAME_NAME)
+#define xSE_GAME_NAME_W _CRT_WIDE(xSE_GAME_NAME_A)
+
 #define xSE_FOLDER_NAME_A _CRT_STRINGIZE(xSE_FOLDER_NAME)
 #define xSE_FOLDER_NAME_W _CRT_WIDE(xSE_FOLDER_NAME_A)
+
+#define xSE_CONFIG_FOLDER_NAME_A _CRT_STRINGIZE(xSE_CONFIG_FOLDER_NAME)
+#define xSE_CONFIG_FOLDER_NAME_W _CRT_WIDE(xSE_CONFIG_FOLDER_NAME_A)
 
 //////////////////////////////////////////////////////////////////////////
 // Call conventions
