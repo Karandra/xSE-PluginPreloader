@@ -33,7 +33,13 @@ namespace xSE
 	{
 		OnProcessAttach,
 		OnThreadAttach,
-		ImportAddressHook,
+		ImportAddressHook
+	};
+	enum class InitializationMethod
+	{
+		None,
+		Standard,
+		xSEPluginPreload
 	};
 }
 
@@ -154,12 +160,13 @@ namespace xSE
 			std::optional<LoadMethod> m_LoadMethod;
 			PluginPreloader::OnProcessAttach m_OnProcessAttach;
 			PluginPreloader::OnThreadAttach m_OnThreadAttach;
-
 			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
 			PluginPreloader::ImportAddressHook<void*(__cdecl)(void*, void*)> m_ImportAddressHook;
 			#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 			PluginPreloader::ImportAddressHook<char*(__stdcall)()> m_ImportAddressHook;
 			#endif
+
+			std::optional<InitializationMethod> m_InitializationMethod;
 
 			// Log
 			mutable kxf::ReadWriteLock m_LogLock;
@@ -207,7 +214,7 @@ namespace xSE
 		public:
 			bool IsNull() const
 			{
-				return m_OriginalLibrary.IsNull() || !m_LoadMethod.has_value();
+				return m_OriginalLibrary.IsNull() || !m_LoadMethod.has_value() || !m_InitializationMethod.has_value();
 			}
 			LoadMethod GetLoadMethod() const
 			{

@@ -86,6 +86,54 @@
 			<OnProcessAttach/>
 		</LoadMethod>
 
+		<!-- Initialization method for xSE plugins after they're preloaded, 'Standard' by default. Don't change unless required. -->
+		<InitializationMethod Name="Standard">
+			<!--
+				# None
+
+				## Description:
+					No plugin initialization is done after preloading.
+
+				## Parameters:
+					<None>
+			-->
+			<None/>
+
+			<!--
+				# Standard
+
+				## Description:
+					The initialization method originally implemented in meh321's SKSE Plugin Preloader (https://www.nexusmods.com/skyrim/mods/75795).
+					A plugin DLL can mark itself to be preloaded by packaging a text file alongside it. The text file has to be named the same way as
+					the dll, but with '_preload.txt' at the end (for example 'MyMod.dll' and 'MyMod_preload.txt'). The plugin can optionally export a
+					function with the name 'Initialize' and signature 'void(__cdecl*)(void)' to preform any inititalization outside of its own DLLMain,
+					but it's not required.
+
+				## Parameters:
+					<None>
+			-->
+			<Standard/>
+
+			<!--
+				# xSE-PluginPreload
+
+				## Description:
+					The initialization method implemented in the latest xSE versions. A plugin DLL can export a function with the name '<xSE>Plugin_Preload'
+					and signature 'bool(__cdecl*)(const <xSE>Interface*)'. xSE PluginPreloader is going to call this function with nullptr as its parameter
+					as opponse to xSE loader calling it with an actual pointer to the structure.
+
+					The '*_preload.txt' file is not required here as opposed to Standard method, the loader searches for '<xSE>Plugin_Preload' function export
+					directly and loads the dll calling that function if it's found.
+
+					For example, when using this method for Fallout 4 the xSE PluginPreloader is going to locate all DLL plugins containing 'F4SEPlugin_Preload'
+					exported function and call that function with nullptr as its parameter for each matching DLL.
+
+				## Parameters:
+					<None>
+			-->
+			<xSE-PluginPreload/>
+		</InitializationMethod>
+
 		<!--
 			# InstallExceptionHandler
 			Usually vectored exception handler is installed right before plugins loading and removed after it's done.
@@ -118,15 +166,41 @@
 			<Item Name="FalloutNV.exe" Allow="false"/>
 			<Item Name="Fallout4.exe" Allow="true"/>
 			<Item Name="Fallout4VR.exe" Allow="true"/>
-
 			<Item Name="Morrowind.exe" Allow="false"/>
 			<Item Name="Oblivion.exe" Allow="false"/>
 			<Item Name="TESV.exe" Allow="true"/>
 			<Item Name="SkyrimSE.exe" Allow="true"/>
 			<Item Name="SkyrimVR.exe" Allow="true"/>
+			<Item Name="Starfield.exe" Allow="false"/>
+
+			<Item Name="Morrowind Launcher.exe" Allow="false"/>
+			<Item Name="Oblivion Launcher.exe" Allow="false"/>
+			<Item Name="SkyrimLauncher.exe" Allow="false"/>
+			<Item Name="SkyrimSELauncher.exe" Allow="false"/>
+			<Item Name="SkyrimVRLauncher.exe" Allow="false"/>
+			<Item Name="FalloutLauncher.exe" Allow="false"/>
+			<Item Name="FalloutNVLauncher.exe" Allow="false"/>
+			<Item Name="Fallout4Launcher.exe" Allow="false"/>
+			<Item Name="Fallout4VRLauncher.exe" Allow="false"/>
 
 			<Item Name="TESConstructionSet.exe" Allow="false"/>
 			<Item Name="CreationKit.exe" Allow="false"/>
+			<Item Name="ENBInjector.exe" Allow="false"/>
+
+			<Item Name="TES Construction Set.exe" Allow="false"/>
+			<Item Name="TESConstructionSet.exe" Allow="false"/>
+			<Item Name="CreationKit.exe" Allow="false"/>
+			<Item Name="ENBInjector.exe" Allow="false"/>
+
+			<Item Name="OBSE_Loader.exe" Allow="false"/>
+			<Item Name="SKSE_Loader.exe" Allow="false"/>
+			<Item Name="SKSE64_Loader.exe" Allow="false"/>
+			<Item Name="SKSEVR_Loader.exe" Allow="false"/>
+			<Item Name="FOSE_Loader.exe" Allow="false"/>
+			<Item Name="NVSE_Loader.exe" Allow="false"/>
+			<Item Name="F4SE_Loader.exe" Allow="false"/>
+			<Item Name="F4SEVR_Loader.exe" Allow="false"/>
+			<Item Name="SFSE_Loader.exe" Allow="false"/>
 		</Processes>
 	</PluginPreloader>
 </xSE>

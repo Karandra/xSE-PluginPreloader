@@ -79,6 +79,24 @@ namespace
 		}
 		return {};
 	}
+	std::optional<xSE::InitializationMethod> InitializationMethodFromString(const kxf::String& name)
+	{
+		using namespace xSE;
+
+		if (name == "None")
+		{
+			return InitializationMethod::None;
+		}
+		else if (name == "Standard")
+		{
+			return InitializationMethod::Standard;
+		}
+		else if (name == "xSE-PluginPreload")
+		{
+			return InitializationMethod::xSEPluginPreload;
+		}
+		return {};
+	}
 	kxf::String LoadMethodToName(xSE::LoadMethod method)
 	{
 		using namespace xSE;
@@ -238,22 +256,50 @@ namespace xSE
 		};
 
 		// Begin loading
-		Log("Searching directory '{}' for plugins", m_PluginsDirectory.GetFullPath());
+		kxf::FSPath pluginsDirectory = kxf::FSPath("Data") / xSE_FOLDER_NAME_W / "Plugins";
+		Log("Searching directory '{}' for plugins", pluginsDirectory.GetFullPath());
 
 		size_t itemsScanned = 0;
-		for (const kxf::FileItem& fileItem: m_FileSystem.EnumItems(m_PluginsDirectory, "*_preload.txt", kxf::FSActionFlag::LimitToFiles))
+		switch (*m_InitializationMethod)
 		{
-			itemsScanned++;
-			if (fileItem.IsNormalItem())
+			case InitializationMethod::Standard:
 			{
-				const kxf::FSPath libraryPath = m_PluginsDirectory / fileItem.GetName().BeforeLast('_') + ".dll";
-				Log("Preload directive '{}' found, trying to load the corresponding library '{}'", fileItem.GetName(), libraryPath.GetFullPath());
+				for (const kxf::FileItem& fileItem: m_InstallFS.EnumItems(pluginsDirectory, "*_preload.txt", kxf::FSActionFlag::LimitToFiles))
+				{
+					itemsScanned++;
+					if (fileItem.IsNormalItem())
+					{
+						const kxf::FSPath libraryPath = pluginsDirectory / fileItem.GetName().BeforeLast('_') + ".dll";
+						Log("Preload directive '{}' found, trying to load the corresponding library '{}'", fileItem.GetName(), libraryPath.GetFullPath());
 
-				PluginStatus status = DoLoadSinglePlugin(libraryPath);
-				LogLoadStatus(libraryPath, status);
+						PluginStatus status = DoLoadSinglePlugin(libraryPath);
+						LogLoadStatus(libraryPath, status);
+					}
+				}
+				break;
 			}
-		}
+			case InitializationMethod::xSEPluginPreload:
+			{
+				const kxf::String routineName = xSE_NAME_W "Plugin_Preload";
+				for (const kxf::FileItem& fileItem: m_InstallFS.EnumItems(pluginsDirectory, "*.dll", kxf::FSActionFlag::LimitToFiles))
+				{
+					itemsScanned++;
+					if (fileItem.IsNormalItem())
+					{
+						const kxf::FSPath libraryPath = pluginsDirectory / fileItem.GetName();
+						if (kxf::DynamicLibrary library(libraryPath, kxf::DynamicLibraryFlag::Resource); !library.IsNull() && library.ContainsExportedFunction(routineName))
+						{
+							Log("Preload directive '{}' found, trying to load the library '{}'", routineName, libraryPath.GetFullPath());
+							library.Unload();
 
+							PluginStatus status = DoLoadSinglePlugin(libraryPath);
+							LogLoadStatus(libraryPath, status);
+						}
+					}
+				}
+				break;
+			}
+		};
 		Log("Loading finished, {} plugins loaded, {} items scanned", m_LoadedLibraries.size(), itemsScanned);
 	}
 	void PreloadHandler::DoUnloadPlugins()
@@ -293,17 +339,50 @@ namespace xSE
 				// Call initialization routine
 				const kxf::NtStatus initializeStatus = Utility::SEHTryExcept([&]()
 				{
-					using TInitialize = void(__cdecl*)(void);
-					if (auto initalize = pluginLibrary.GetExportedFunction<TInitialize>("Initialize"))
+					switch (*m_InitializationMethod)
 					{
-						LogIndent(1, "<{}> Calling the initialization routine", path.GetName());
-						std::invoke(*initalize);
-						pluginStatus = PluginStatus::Initialized;
-					}
-					else
-					{
-						LogIndent(1, "<{}> No initialization routine found", path.GetName());
-					}
+						case InitializationMethod::Standard:
+						{
+							using TInitialize = void(__cdecl*)(void);
+							const char* routineName = "Initialize";
+
+							if (auto initalize = pluginLibrary.GetExportedFunction<TInitialize>(routineName))
+							{
+								LogIndent(1, "<{}> Calling the initialization routine '{}'", path.GetName(), routineName);
+								std::invoke(*initalize);
+
+								pluginStatus = PluginStatus::Initialized;
+							}
+							else
+							{
+								LogIndent(1, "<{}> No initialization routine '{}' found", path.GetName(), routineName);
+							}
+							break;
+						}
+						case InitializationMethod::xSEPluginPreload:
+						{
+							using TInitialize = bool(__cdecl*)(void*);
+							const char* routineName = xSE_NAME_A "Plugin_Preload";
+
+							if (auto initalize = pluginLibrary.GetExportedFunction<TInitialize>(routineName))
+							{
+								LogIndent(1, "<{}> Calling the initialization routine '{}'", path.GetName(), routineName);
+								if (std::invoke(*initalize, nullptr))
+								{
+									pluginStatus = PluginStatus::Initialized;
+								}
+								else
+								{
+									LogIndent(1, "<{}> Initialization routine failed", path.GetName());
+								}
+							}
+							else
+							{
+								LogIndent(1, "<{}> No initialization routine '{}' found", path.GetName(), routineName);
+							}
+							break;
+						}
+					};
 				});
 
 				if (initializeStatus)
@@ -363,7 +442,7 @@ namespace xSE
 							OnPluginLoadFailed(moduleName, logIndentOffset + 2);
 						}
 					}
-					return true;
+					return kxf::CallbackCommand::Continue;
 				});
 			}
 			else
@@ -962,8 +1041,8 @@ namespace xSE
 
 		m_LoadMethod = [&]() -> decltype(m_LoadMethod)
 		{
-			kxf::XMLNode rootNode = m_Config.QueryElement("xSE/PluginPreloader/LoadMethod");
-			kxf::String methodName = rootNode.GetAttribute("Name");
+			auto rootNode = m_Config.QueryElement("xSE/PluginPreloader/LoadMethod");
+			auto methodName = rootNode.GetAttribute("Name");
 
 			if (auto method = LoadMethodFromString(methodName))
 			{
@@ -1008,6 +1087,22 @@ namespace xSE
 			else
 			{
 				Log("Unknown load method: '{}'", methodName);
+			}
+			return {};
+		}();
+
+		m_InitializationMethod = [&]() -> decltype(m_InitializationMethod)
+		{
+			auto rootNode = m_Config.QueryElement("xSE/PluginPreloader/InitializationMethod");
+			auto methodName = rootNode.GetAttribute("Name");
+
+			if (auto method = InitializationMethodFromString(methodName))
+			{
+				Log("Initialization method is set to '{}'", methodName);
+			}
+			else
+			{
+				Log("Unknown initialization method: '{}'", methodName);
 			}
 			return {};
 		}();
