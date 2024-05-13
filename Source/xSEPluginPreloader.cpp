@@ -7,6 +7,8 @@
 #include <kxf/Application/GUIApplication.h>
 #include <kxf/IO/StreamReaderWriter.h>
 #include <kxf/Log/Common.h>
+#include <kxf/Log/ScopedLogger.h>
+#include <kxf/Log/ScopedLoggerContext.h>
 #include <kxf/Localization/Locale.h>
 #include <kxf/System/ExecutableVersionResource.h>
 #include <kxf/System/SystemInformation.h>
@@ -525,28 +527,21 @@ namespace xSE
 
 	size_t PreloadHandler::DoLog(kxf::String logString, bool addTimestamp, size_t indent) const
 	{
-		if (m_LogStream && !logString.IsEmptyOrWhitespace())
+		if (!logString.IsEmptyOrWhitespace())
 		{
-			kxf::IO::OutputStreamWriter writer(*m_LogStream);
-
 			if (indent != 0)
 			{
 				logString.Prepend(wxS(' '), indent * 4);
 			}
-			if (addTimestamp)
-			{
-				auto timeStamp = kxf::DateTime::Now();
-				kxf::String timeStampFormatted = kxf::Format("[{}:{:0>3}|TID:{:0>9}] ", timeStamp.FormatISOCombined(' '), timeStamp.GetMillisecond(), kxf::Threading::GetCurrentThreadID());
 
-				logString.Prepend(std::move(timeStampFormatted));
-			}
-			logString += '\n';
-
-			if (kxf::WriteLockGuard lock(m_LogLock); true)
+			kxf::String category;
+			if (logString.StartsWith('<'))
 			{
-				writer.WriteStringUTF8(logString);
-				m_LogStream->Flush();
+				category = logString.SubMid(1, logString.Find('>', 1) - 1);
+				logString.ReplaceRange(0, category.GetLength() + 3, kxf::NullString);
 			}
+
+			kxf::Log::InfoCategory(category, "{}", logString);
 			return logString.length();
 		}
 		return 0;
@@ -652,37 +647,6 @@ namespace xSE
 	{
 		Log("Initializing framework");
 
-		// Disable asserts as they're not useful here
-		wxLog::DontCreateOnDemand();
-		kxf::Log::EnableAsserts(false);
-
-		// Redirect the framework log to our own log file
-		if (m_LogStream)
-		{
-			class LogTarget final: public wxLog
-			{
-				private:
-					PreloadHandler& m_Instance;
-
-				protected:
-					void DoLogRecord(wxLogLevel level, const wxString& message, const wxLogRecordInfo& info) override
-					{
-						m_Instance.Log("<Framework> {}", message);
-					}
-
-				public:
-					LogTarget(PreloadHandler& instance)
-						:m_Instance(instance)
-					{
-					}
-			};
-			kxf::Log::SetActiveTarget(std::make_unique<LogTarget>(*this));
-		}
-		else
-		{
-			kxf::Log::Enable(false);
-		}
-
 		// Register modules
 		using kxf::NativeAPISet;
 
@@ -752,10 +716,10 @@ namespace xSE
 	}
 	kxf::ExecutableVersionResource PreloadHandler::LogScriptExtenderInfo(const kxf::ExecutableVersionResource& hostResourceInfo) const
 	{
-		const kxf::FSPath loaderPath = m_FileSystem.ResolvePath(xSE_FOLDER_NAME_W "_Loader.exe");
+		const kxf::FSPath loaderPath = m_InstallFS.ResolvePath(xSE_FOLDER_NAME_W "_Loader.exe");
 		Log("<Script Extender> Platform: {}", xSE_NAME_W);
 		Log("<Script Extender> Loader: '{}'", loaderPath.GetFullPath());
-		if (!m_FileSystem.FileExist(loaderPath))
+		if (!m_InstallFS.FileExist(loaderPath))
 		{
 			LogIndent(1, "File not found: '{}'", loaderPath.GetFullPath());
 		}
@@ -782,9 +746,9 @@ namespace xSE
 			versionString.Replace('.', '_');
 			return versionString;
 		}();
-		auto libraryPath = m_FileSystem.ResolvePath(kxf::Format("{}_{}.dll", xSE_FOLDER_NAME_W, versionString));
+		auto libraryPath = m_InstallFS.ResolvePath(kxf::Format("{}_{}.dll", xSE_FOLDER_NAME_W, versionString));
 		Log("<Script Extender> Library: '{}'", libraryPath.GetFullPath());
-		if (!m_FileSystem.FileExist(libraryPath))
+		if (!m_InstallFS.FileExist(libraryPath))
 		{
 			LogIndent(1, "File not found: '{}'", libraryPath.GetFullPath());
 		}
@@ -949,17 +913,28 @@ namespace xSE
 	}
 
 	PreloadHandler::PreloadHandler()
-		:m_FileSystem(kxf::NativeFileSystem::GetExecutingModuleRootDirectory())
 	{
+		::Sleep(5000);
+
 		m_Application = std::make_shared<Application>(*this);
+		m_InstallFS.SetLookupDirectory(kxf::NativeFileSystem::GetExecutingModuleRootDirectory());
+		m_ConfigFS.SetLookupDirectory(kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::Documents) / "My Games" / xSE_CONFIG_FOLDER_NAME_W / xSE_FOLDER_NAME_W);
 
 		// Initialize plugins directory
-		m_PluginsDirectory = m_FileSystem.GetLookupDirectory() / "Data" / xSE_FOLDER_NAME_W / "Plugins";
 		m_ExecutablePath = kxf::DynamicLibrary::GetExecutingModule().GetFilePath();
 
 		// Open log
-		m_LogStream = m_FileSystem.OpenToWrite(g_LogFileName);
-		Log("Log opened");
+		{
+			using namespace kxf;
+
+			auto stream = m_ConfigFS.OpenToWrite(g_LogFileName, IOStreamDisposition::CreateAlways, IOStreamShare::Read, FSActionFlag::CreateDirectoryTree|FSActionFlag::Recursive);
+			if (!stream)
+			{
+				stream = m_InstallFS.OpenToWrite(g_LogFileName, IOStreamDisposition::CreateAlways, IOStreamShare::Read, FSActionFlag::CreateDirectoryTree|FSActionFlag::Recursive);
+			}
+
+			kxf::ScopedLoggerGlobalContext::Initialize(std::make_shared<kxf::ScopedLoggerSingleFileContext>(std::move(stream)));
+		}
 
 		// Init framework
 		if (!m_Application->OnCreate() || !InitializeFramework())
@@ -973,8 +948,8 @@ namespace xSE
 		LogEnvironmentInfo();
 
 		// Load config
-		Log("Loading configuration from '{}'", m_FileSystem.ResolvePath(g_ConfigFileName).GetFullPath());
-		if (auto readStream = m_FileSystem.OpenToRead(g_ConfigFileName); readStream && m_Config.Load(*readStream))
+		Log("Loading configuration from '{}'", m_InstallFS.ResolvePath(g_ConfigFileName).GetFullPath());
+		if (auto readStream = m_InstallFS.OpenToRead(g_ConfigFileName); readStream && m_Config.Load(*readStream))
 		{
 			LogIndent(1, "Configuration file successfully loaded");
 		}
@@ -999,7 +974,7 @@ namespace xSE
 			{
 				LogIndent(1, "Default configuration successfully loaded");
 
-				auto writeStream = m_FileSystem.OpenToWrite(g_ConfigFileName);
+				auto writeStream = m_InstallFS.OpenToWrite(g_ConfigFileName);
 				if (writeStream && writeStream->WriteAll(defaultXML.data(), defaultXML.size_bytes()))
 				{
 					LogIndent(1, "Default configuration successfully saved to disk");
@@ -1099,12 +1074,13 @@ namespace xSE
 			if (auto method = InitializationMethodFromString(methodName))
 			{
 				Log("Initialization method is set to '{}'", methodName);
+				return *method;
 			}
 			else
 			{
 				Log("Unknown initialization method: '{}'", methodName);
+				return {};
 			}
-			return {};
 		}();
 
 		m_LoadDelay = [&]()
@@ -1158,11 +1134,5 @@ namespace xSE
 			UnloadOriginalLibrary();
 		}
 		RemoveVectoredExceptionHandler();
-
-		// Close the log
-		Log(L"Log closed");
-		kxf::Log::SetActiveTarget(nullptr);
-		kxf::Log::Enable(false);
-		m_LogStream = nullptr;
 	}
 }

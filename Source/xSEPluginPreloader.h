@@ -133,20 +133,18 @@ namespace xSE
 
 		private:
 			// General
-			kxf::NativeFileSystem m_FileSystem;
+			std::shared_ptr<Application> m_Application;
+			kxf::NativeFileSystem m_InstallFS;
+			kxf::NativeFileSystem m_ConfigFS;
 			kxf::DynamicLibrary m_OriginalLibrary;
 			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
 			VectoredExceptionHandler m_VectoredExceptionHandler;
 
 			kxf::FSPath m_ExecutablePath;
-			kxf::FSPath m_PluginsDirectory;
 			bool m_PluginsLoaded = false;
 			bool m_PluginsLoadAllowed = false;
-
 			std::atomic<size_t> m_ThreadAttachCount = 0;
 			bool m_WatchThreadAttach = false;
-
-			std::shared_ptr<Application> m_Application;
 
 			// Config
 			kxf::XMLDocument m_Config;
@@ -167,10 +165,6 @@ namespace xSE
 			#endif
 
 			std::optional<InitializationMethod> m_InitializationMethod;
-
-			// Log
-			mutable kxf::ReadWriteLock m_LogLock;
-			std::unique_ptr<kxf::IOutputStream> m_LogStream;
 
 		private:
 			kxf::FSPath GetOriginalLibraryPath() const;
