@@ -8,6 +8,9 @@
 #include <kxf/Core/Version.h>
 #include <kxf/Core/DateTime.h>
 
+#include <kxf/Log/ScopedLogger.h>
+#include <kxf/Log/Categories.h>
+
 #include <kxf/FileSystem/Common.h>
 #include <kxf/FileSystem/FSPath.h>
 #include <kxf/FileSystem/FileItem.h>

@@ -27,7 +27,6 @@ namespace xSE
 
 			bool OnMainLoopException() override;
 			void OnUnhandledException() override;
-			void OnAssertFailure(const kxf::String& file, int line, const kxf::String& function, const kxf::String& condition, const kxf::String& message) override;
 
 			const kxf::ILocalizationPackage& GetLocalizationPackage() const override
 			{

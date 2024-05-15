@@ -481,6 +481,7 @@
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="Source\Application.h" />
+    <ClInclude Include="Source\Common.h" />
     <ClInclude Include="Source\Detour.h" />
     <ClInclude Include="Source\Framework.hpp" />
     <ClInclude Include="Source\pch.hpp" />

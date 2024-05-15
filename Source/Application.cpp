@@ -28,11 +28,11 @@ namespace xSE
 	{
 		Bind(kxf::DynamicLibraryEvent::EvtLoaded, [&](kxf::DynamicLibraryEvent& event)
 		{
-			m_PreloadHandler.Log("<Framework:App> Library '{}' loaded from '{}'", event.GetBaseName().GetFullPath(), event.GetLibrary().GetFilePath().GetFullPath());
+			kxf::Log::Trace("Library '{}' loaded from '{}'", event.GetBaseName().GetFullPath(), event.GetLibrary().GetFilePath().GetFullPath());
 		}, kxf::BindEventFlag::AlwaysSkip);
 		Bind(kxf::DynamicLibraryEvent::EvtUnloaded, [&](kxf::DynamicLibraryEvent& event)
 		{
-			m_PreloadHandler.Log("<Framework:App> Library '{}' unloaded", event.GetBaseName().GetFullPath());
+			kxf::Log::Trace("Library '{}' unloaded", event.GetBaseName().GetFullPath());
 		}, kxf::BindEventFlag::AlwaysSkip);
 
 		return true;
@@ -59,7 +59,7 @@ namespace xSE
 		}
 
 		// Log error message
-		m_PreloadHandler.Log("<Framework:App> Unexpected exception has occurred: {}.\r\n\r\nThe program will terminate.", exceptionMessage);
+		kxf::Log::Critical("Unexpected exception has occurred: '{}', the program will terminate", exceptionMessage);
 
 		// Exit the main loop and terminate the program
 		return false;
@@ -67,9 +67,5 @@ namespace xSE
 	void Application::OnUnhandledException()
 	{
 		Application::OnMainLoopException();
-	}
-	void Application::OnAssertFailure(const kxf::String& file, int line, const kxf::String& function, const kxf::String& condition, const kxf::String& message)
-	{
-		m_PreloadHandler.Log("<Framework:App> Assert failure: File=[{}]@{}; Function=[{}]; Condition=[{}]; Message=[{}]", file, line, function, condition, message);
 	}
 }
