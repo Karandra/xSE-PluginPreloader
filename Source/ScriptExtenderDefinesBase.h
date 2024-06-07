@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Main defines
 //////////////////////////////////////////////////////////////////////////
-enum xSE_PlatfromGenerationEnum: int
+enum xSE_PlatfromGeneration: int
 {
 	xSE_PLATFORM_GENERATION_NONE,
 	xSE_PLATFORM_GENERATION_MWSE,
@@ -13,8 +13,10 @@ enum xSE_PlatfromGenerationEnum: int
 	xSE_PLATFORM_GENERATION_NVSE,
 	xSE_PLATFORM_GENERATION_SKSE,
 	xSE_PLATFORM_GENERATION_SKSE64,
+	xSE_PLATFORM_GENERATION_SKSE64AE,
 	xSE_PLATFORM_GENERATION_SKSEVR,
 	xSE_PLATFORM_GENERATION_F4SE,
+	xSE_PLATFORM_GENERATION_F4SEVR,
 	xSE_PLATFORM_GENERATION_SFSE
 };
 
@@ -27,6 +29,7 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_PACKED_VERSION PACKED_MWSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_MWSE
 
+#define xSE_PRELOADFUNCTION MWSEPlugin_Preload
 #define xSE_QUERYFUNCTION MWSEPlugin_Query
 #define xSE_LOADFUNCTION MWSEPlugin_Load
 
@@ -39,6 +42,7 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_PACKED_VERSION OBSE_VERSION_INTEGER
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_OBSE
 
+#define xSE_PRELOADFUNCTION OBSEPlugin_Preload
 #define xSE_QUERYFUNCTION OBSEPlugin_Query
 #define xSE_LOADFUNCTION OBSEPlugin_Load
 
@@ -51,6 +55,7 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_PACKED_VERSION FOSE_VERSION_INTEGER
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_FOSE
 
+#define xSE_PRELOADFUNCTION FOSEPlugin_Preload
 #define xSE_QUERYFUNCTION FOSEPlugin_Query
 #define xSE_LOADFUNCTION FOSEPlugin_Load
 
@@ -63,6 +68,7 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_PACKED_VERSION NVSE_VERSION_INTEGER
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_NVSE
 
+#define xSE_PRELOADFUNCTION NVSEPlugin_Preload
 #define xSE_QUERYFUNCTION NVSEPlugin_Query
 #define xSE_LOADFUNCTION NVSEPlugin_Load
 
@@ -75,6 +81,7 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_PACKED_VERSION PACKED_SKSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_SKSE
 
+#define xSE_PRELOADFUNCTION SKSEPlugin_Preload
 #define xSE_QUERYFUNCTION SKSEPlugin_Query
 #define xSE_LOADFUNCTION SKSEPlugin_Load
 
@@ -91,6 +98,19 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_QUERYFUNCTION SKSEPlugin_Query
 #define xSE_LOADFUNCTION SKSEPlugin_Load
 
+#elif xSE_PLATFORM_SKSE64AE
+
+#define xSE_NAME SKSE64AE
+#define xSE_GAME_NAME Skyrim Anniversary Edition
+#define xSE_FOLDER_NAME SKSE
+#define xSE_CONFIG_FOLDER_NAME Skyrim Special Edition
+#define xSE_PACKED_VERSION PACKED_SKSE_VERSION
+#define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_SKSE64AE
+
+#define xSE_PRELOADFUNCTION SKSEPlugin_Preload
+#define xSE_QUERYFUNCTION SKSEPlugin_Query
+#define xSE_LOADFUNCTION SKSEPlugin_Load
+
 #elif xSE_PLATFORM_SKSEVR
 
 #define xSE_NAME SKSEVR
@@ -100,6 +120,7 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_PACKED_VERSION PACKED_SKSE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_SKSEVR
 
+#define xSE_PRELOADFUNCTION SKSEPlugin_Preload
 #define xSE_QUERYFUNCTION SKSEPlugin_Query
 #define xSE_LOADFUNCTION SKSEPlugin_Load
 
@@ -111,6 +132,19 @@ enum xSE_PlatfromGenerationEnum: int
 #define xSE_CONFIG_FOLDER_NAME Fallout4
 #define xSE_PACKED_VERSION PACKED_F4SE_VERSION
 #define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_F4SE
+
+#define xSE_PRELOADFUNCTION F4SEPlugin_Preload
+#define xSE_QUERYFUNCTION F4SEPlugin_Query
+#define xSE_LOADFUNCTION F4SEPlugin_Load
+
+#elif xSE_PLATFORM_F4SEVR
+
+#define xSE_NAME F4SEVR
+#define xSE_GAME_NAME Fallout 4 VR
+#define xSE_FOLDER_NAME F4SE
+#define xSE_CONFIG_FOLDER_NAME Fallout4VR
+#define xSE_PACKED_VERSION PACKED_F4SE_VERSION
+#define xSE_PLATFORM_GENERATION xSE_PLATFORM_GENERATION_F4SEVR
 
 #define xSE_PRELOADFUNCTION F4SEPlugin_Preload
 #define xSE_QUERYFUNCTION F4SEPlugin_Query
