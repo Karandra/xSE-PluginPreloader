@@ -612,7 +612,7 @@ namespace xSE
 			exceptionCodeMessage.Replace("\r\n", "; ");
 			exceptionCodeMessage.Replace("\r", "; ");
 			exceptionCodeMessage.Replace("\n", "; ");
-			exceptionCodeMessage.Trim().Trim(kxf::StringActionFlag::FromEnd);
+			exceptionCodeMessage.TrimBoth();
 
 			return exceptionCodeMessage;
 		};
@@ -1148,5 +1148,7 @@ namespace xSE
 			UnloadOriginalLibrary();
 		}
 		RemoveVectoredExceptionHandler();
+		
+		KX_SCOPEDLOG.SetSuccess();
 	}
 }
