@@ -4,10 +4,10 @@
 		<!--
 			# OriginalLibrary
 			If you have a mod that uses the same DLL as the preloader, you can rename the DLL from your mod and set
-			its new name here. Empty by default. For example, if the preloader uses 'IpHlpAPI.dll' and your mod uses
-			the same DLL, rename the DLL from your mod to something else like 'IpHlpAPI MyMod.dll' and set the option to:
+			its new name here. Empty by default. For example, if the preloader uses 'WinHTTP.dll' and your mod uses
+			the same DLL, rename the DLL from your mod to something else like 'WinHTTP-MyMod.dll' and set the option to:
 
-			<OriginalLibrary>IpHlpAPI MyMod.dll</OriginalLibrary>
+			<OriginalLibrary>WinHTTP-MyMod.dll</OriginalLibrary>
 		-->
 		<OriginalLibrary/>
 
@@ -28,15 +28,15 @@
 						FunctionName: _initterm_e
 							The function *must* have a signature compatible with 'void*(__cdecl*)(void*, void*)'.
 
-					### Skyrim (Legendary Edition):
-						LibraryName: kernel32.dll
-						FunctionName: GetCommandLineA
-							The function *must* have a signature compatible with 'void*(__stdcall*)()'.
-
 					### Skyrim (Special and Anniversary Edition):
 						LibraryName: api-ms-win-crt-runtime-l1-1-0.dll
 						FunctionName: _initterm_e
 							The function *must* have a signature compatible with 'void*(__cdecl*)(void*, void*)'.
+
+					### Skyrim (Legendary Edition):
+						LibraryName: kernel32.dll
+						FunctionName: GetCommandLineA
+							The function *must* have a signature compatible with 'void*(__stdcall*)()'.
 
 				## Parameters:
 					- LibraryName: The name of a DLL that contains the function to hook.
@@ -46,27 +46,6 @@
 				<LibraryName></LibraryName>
 				<FunctionName></FunctionName>
 			</ImportAddressHook>
-
-			<!--
-				# OnThreadAttach
-
-				## Description:
-					Same as 'OnProcessAttach' above, but loads plugins after certain number of threads have been created
-					by the host process (inside 'DLL_THREAD_ATTACH' notification). This methods has all the disadvantages
-					of the previous one but it can be triggered too late.
-
-				## Remarks:
-					The method mainly designed for Mod Organizer 2 (MO2) to give some time to its virtual file system to
-					initialize itself, otherwise there will be no plugins to preload if they're installed as MO2 virtual
-					mods.
-
-				## Parameters:
-					- ThreadNumber: Specifies a thread number which will trigger the loading. That is, when the value is '2',
-					the second attached thread will trigger the loading process. Negative numbers are not allowed.
-			-->
-			<OnThreadAttach>
-				<ThreadNumber>2</ThreadNumber>
-			</OnThreadAttach>
 
 			<!--
 				# OnProcessAttach
@@ -84,6 +63,29 @@
 					<None>
 			-->
 			<OnProcessAttach/>
+
+			<!--
+				# OnThreadAttach
+
+				## Description:
+					Same as 'OnProcessAttach' above, but loads plugins after certain number of threads have been created
+					by the host process (inside 'DLL_THREAD_ATTACH' notification). This methods works basically the same
+					way as the previous one and has all the same disadvantages. The only upside is the option to control
+					when the preload happens.
+
+				## Remarks:
+					The method mainly designed for Mod Organizer 2 (MO2) to give some time to its virtual file system to
+					initialize itself, otherwise there will be no plugins to preload if they're installed as MO2 virtual
+					mods.
+
+				## Parameters:
+					- ThreadNumber: Specifies a thread number which will trigger the loading. That is, when the value is '2',
+					the second attached thread will trigger the loading process. Negative numbers are not allowed. The preload
+					can be triggered early if the number is too low or too late if the thread number is too high.
+			-->
+			<OnThreadAttach>
+				<ThreadNumber>2</ThreadNumber>
+			</OnThreadAttach>
 		</LoadMethod>
 
 		<!-- Initialization method for xSE plugins after they're preloaded, 'Standard' by default. Don't change unless required. -->
@@ -92,7 +94,7 @@
 				# None
 
 				## Description:
-					No plugin initialization is done after preloading.
+					No plugin initialization is done after preloading. Usually not required.
 
 				## Parameters:
 					<None>
@@ -105,9 +107,9 @@
 				## Description:
 					The initialization method originally implemented in meh321's SKSE Plugin Preloader (https://www.nexusmods.com/skyrim/mods/75795).
 					A plugin DLL can mark itself to be preloaded by packaging a text file alongside it. The text file has to be named the same way as
-					the dll, but with '_preload.txt' at the end (for example 'MyMod.dll' and 'MyMod_preload.txt'). The plugin can optionally export a
-					function with the name 'Initialize' and signature 'void(__cdecl*)(void)' to preform any inititalization outside of its own DLLMain,
-					but it's not required.
+					the dll, but with '_preload.txt' at the end (for example 'MyMod.dll' and 'MyMod_preload.txt'). The text file content doesn't matter,
+					it can be empty. The plugin can optionally export a function with the name 'Initialize' and signature 'void(__cdecl*)(void)' to
+					preform any inititalization outside of its own DLLMain, but it's not required.
 
 				## Parameters:
 					<None>
@@ -120,9 +122,9 @@
 				## Description:
 					The initialization method implemented in the latest xSE versions. A plugin DLL can export a function with the name '<xSE>Plugin_Preload'
 					and signature 'bool(__cdecl*)(const <xSE>Interface*)'. xSE PluginPreloader is going to call this function with nullptr as its parameter
-					as opponse to xSE loader calling it with an actual pointer to the structure.
+					as opponsed to xSE loader calling it with an actual pointer to the structure.
 
-					The '*_preload.txt' file is not required here as opposed to Standard method, the loader searches for '<xSE>Plugin_Preload' function export
+					The '*_preload.txt' file is not required here unlike the Standard method, the loader searches for '<xSE>Plugin_Preload' function export
 					directly and loads the dll calling that function if it's found.
 
 					For example, when using this method for Fallout 4 the xSE PluginPreloader is going to locate all DLL plugins containing 'F4SEPlugin_Preload'
