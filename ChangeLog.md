@@ -1,5 +1,13 @@
 *Dates in DD.MM.YYYY*
 
+# Version 0.3, 18.06.2024
+- Added xSE library loading detection.
+- Added xSE-PluginPreload initialization method.
+- Updated to support Fallout 4 NG update (switched to `WinHTTP.dll`).
+- Updated logging system, log file will now be created in `Documents\My Games\[Game]\[xSE]` folder if possible.
+- Marked game launcher, editor and xSE loader executables as not allowed to preload plugins.
+- Rebuilt with statically linked C runtime library.
+
 # Version 0.2.5.1, 19.11.2021
 - Added experimental support for Skyrim Legendary Edition.
 - Added `InstallExceptionHandler` option to disable vectored exception handler installation (it's enabled by default).
@@ -14,7 +22,7 @@
 
 # Version 0.2.4, 30.11.2020
 - Added DLL load time dependencies diagnostics when plugin failed to load.
-- Removed service pack logging for systems where it's not applicable (Win10).
+- Removed service pack logging for systems where it's not applicable (Win10+).
 
 # Version 0.2.3, 07.10.2020
 - Fixed warning message box about missing `DComp.dll` on Windows 7.
@@ -36,7 +44,7 @@
 - Config file uses XML format instead of INI.
 
 # Version 0.1.2, 02.10.2018
-- Incompatibility with HRTF (or any other mod which uses `X3DAudio1_7.dll`) is resolved. For Fallout 4 'IpHlpAPI.dll' is now used.
+- Incompatibility with HRTF (or any other mod which uses `X3DAudio1_7.dll`) is resolved. For Fallout 4 `IpHlpAPI.dll` is now used.
 
 # Version 0.1.1, 12.08.2018
 - Added config option to specify load method. Default is delayed loading for MO.

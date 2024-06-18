@@ -185,10 +185,6 @@
 			<Item Name="Fallout4Launcher.exe" Allow="false"/>
 			<Item Name="Fallout4VRLauncher.exe" Allow="false"/>
 
-			<Item Name="TESConstructionSet.exe" Allow="false"/>
-			<Item Name="CreationKit.exe" Allow="false"/>
-			<Item Name="ENBInjector.exe" Allow="false"/>
-
 			<Item Name="TES Construction Set.exe" Allow="false"/>
 			<Item Name="TESConstructionSet.exe" Allow="false"/>
 			<Item Name="CreationKit.exe" Allow="false"/>
