@@ -3,13 +3,15 @@
 // KxFramework
 #include <kxf/Common.hpp>
 
-#include <kxf/General/Common.h>
-#include <kxf/General/String.h>
-#include <kxf/General/Format.h>
-#include <kxf/General/Version.h>
-#include <kxf/General/DateTime.h>
+#include <kxf/Core/Common.h>
+#include <kxf/Core/String.h>
+#include <kxf/Core/Version.h>
+#include <kxf/Core/DateTime.h>
+
+#include <kxf/Log/ScopedLogger.h>
+#include <kxf/Log/Categories.h>
 
 #include <kxf/FileSystem/Common.h>
-#include <kxf/FileSystem/FileItem.h>
 #include <kxf/FileSystem/FSPath.h>
+#include <kxf/FileSystem/FileItem.h>
 #include <kxf/FileSystem/IFileSystem.h>

@@ -82,6 +82,12 @@
     <ClInclude Include="Source\Application.h">
       <Filter>Source</Filter>
     </ClInclude>
+    <ClInclude Include="Source\ProxyFunctions\WinHTTP.h">
+      <Filter>Source\ProxyFunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Common.h">
+      <Filter>Source</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="Source\UnconditionalJump.asm">

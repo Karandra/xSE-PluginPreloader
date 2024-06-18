@@ -1,5 +1,5 @@
 #pragma once
-#include "Framework.hpp"
+#include "Common.h"
 #include "VectoredExceptionHandler.h"
 #include "Utility.h"
 #include <kxf/IO/IStream.h>
@@ -33,7 +33,13 @@ namespace xSE
 	{
 		OnProcessAttach,
 		OnThreadAttach,
-		ImportAddressHook,
+		ImportAddressHook
+	};
+	enum class InitializationMethod
+	{
+		None,
+		Standard,
+		xSEPluginPreload
 	};
 }
 
@@ -53,7 +59,7 @@ namespace xSE::PluginPreloader
 	class ImportAddressHook final
 	{
 		private:
-			TSignature* m_UnhookedFunction = nullptr;
+			TSignature* m_OriginalFunction = nullptr;
 
 		public:
 			kxf::String LibraryName;
@@ -66,38 +72,46 @@ namespace xSE::PluginPreloader
 			}
 
 			template<class... Args, class R = std::invoke_result_t<TSignature, Args...>>
-			R CallUnhooked(kxf::NtStatus& status, Args&&... arg)
+			R CallOriginal(kxf::NtStatus& status, Args&&... arg)
 			{
+				KX_SCOPEDLOG_FUNC;
+				KX_SCOPEDLOG.Info()
+					KX_SCOPEDLOG_VALUE_AS(m_OriginalFunction, reinterpret_cast<void*>(m_OriginalFunction))
+					KX_SCOPEDLOG_VALUE(LibraryName)
+					KX_SCOPEDLOG_VALUE(FunctionName);
+
 				if constexpr(std::is_void_v<R>)
 				{
 					status = Utility::SEHTryExcept([&]()
 					{
-						std::invoke(m_UnhookedFunction, std::forward<Args>(arg)...);
+						std::invoke(m_OriginalFunction, std::forward<Args>(arg)...);
 					});
+					KX_SCOPEDLOG.SetSuccess(status);
 				}
 				else
 				{
 					R result;
 					status = Utility::SEHTryExcept([&]()
 					{
-						result = std::invoke(m_UnhookedFunction, std::forward<Args>(arg)...);
+						result = std::invoke(m_OriginalFunction, std::forward<Args>(arg)...);
 					});
 
+					KX_SCOPEDLOG.LogReturn(result, status.IsSuccess());
 					return result;
 				}
 			}
 
-			TSignature* GetUnhooked() const noexcept
+			TSignature* GetOriginal() const noexcept
 			{
-				return m_UnhookedFunction;
+				return m_OriginalFunction;
 			}
-			void SaveUnhooked(TSignature* func) noexcept
+			void SaveOriginal(TSignature* func) noexcept
 			{
-				m_UnhookedFunction = func;
+				m_OriginalFunction = func;
 			}
 			bool IsHooked() const noexcept
 			{
-				return m_UnhookedFunction != nullptr;
+				return m_OriginalFunction != nullptr;
 			}
 	};
 	class ImportAddressHookHandler;
@@ -117,29 +131,26 @@ namespace xSE
 		public:
 			static kxf::String GetLibraryName();
 			static kxf::Version GetLibraryVersion();
+			static PreloadHandler* GetInstance() noexcept;
 
-			static PreloadHandler& GetInstance();
-			static bool HasInstance();
-
-			static size_t GetFunctionsCount() noexcept;
 			static void** GetFunctions() noexcept;
+			static size_t GetFunctionsCount() noexcept;
+			static size_t GetFunctionsEffectiveCount() noexcept;
 
 		private:
 			// General
-			kxf::NativeFileSystem m_FileSystem;
+			std::shared_ptr<Application> m_Application;
+			kxf::NativeFileSystem m_InstallFS;
+			kxf::NativeFileSystem m_ConfigFS;
 			kxf::DynamicLibrary m_OriginalLibrary;
 			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
 			VectoredExceptionHandler m_VectoredExceptionHandler;
 
 			kxf::FSPath m_ExecutablePath;
-			kxf::FSPath m_PluginsDirectory;
 			bool m_PluginsLoaded = false;
 			bool m_PluginsLoadAllowed = false;
-
 			std::atomic<size_t> m_ThreadAttachCount = 0;
 			bool m_WatchThreadAttach = false;
-
-			std::shared_ptr<Application> m_Application;
 
 			// Config
 			kxf::XMLDocument m_Config;
@@ -153,16 +164,13 @@ namespace xSE
 			std::optional<LoadMethod> m_LoadMethod;
 			PluginPreloader::OnProcessAttach m_OnProcessAttach;
 			PluginPreloader::OnThreadAttach m_OnThreadAttach;
-
 			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
 			PluginPreloader::ImportAddressHook<void*(__cdecl)(void*, void*)> m_ImportAddressHook;
 			#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 			PluginPreloader::ImportAddressHook<char*(__stdcall)()> m_ImportAddressHook;
 			#endif
 
-			// Log
-			mutable kxf::ReadWriteLock m_LogLock;
-			std::unique_ptr<kxf::IOutputStream> m_LogStream;
+			std::optional<InitializationMethod> m_InitializationMethod;
 
 		private:
 			kxf::FSPath GetOriginalLibraryPath() const;
@@ -171,15 +179,13 @@ namespace xSE
 			void DoLoadPlugins();
 			void DoUnloadPlugins();
 			PluginStatus DoLoadSinglePlugin(const kxf::FSPath& path);
-			void OnPluginLoadFailed(const kxf::FSPath& path, size_t logIndentOffset = 0);
+			void OnPluginLoadFailed(const kxf::FSPath& path);
 
 			bool CheckAllowedProcesses() const;
 			void LoadOriginalLibrary();
 			void LoadOriginalLibraryFunctions();
 			void UnloadOriginalLibrary();
 			void ClearOriginalFunctions();
-
-			size_t DoLog(kxf::String logString, bool addTimestamp, size_t indent = 0) const;
 
 			bool InstallVectoredExceptionHandler();
 			void RemoveVectoredExceptionHandler();
@@ -206,7 +212,7 @@ namespace xSE
 		public:
 			bool IsNull() const
 			{
-				return m_OriginalLibrary.IsNull() || !m_LoadMethod.has_value();
+				return m_OriginalLibrary.IsNull() || !m_LoadMethod.has_value() || !m_InitializationMethod.has_value();
 			}
 			LoadMethod GetLoadMethod() const
 			{
@@ -239,40 +245,8 @@ namespace xSE
 				}
 				else
 				{
-					static_assert(false);
+					static_assert(sizeof(LoadMethod*) == nullptr);
 				}
-			}
-
-		public:
-			size_t Log(const kxf::String& logString) const
-			{
-				return DoLog(logString, true);
-			}
-			size_t LogIndent(size_t indent, const kxf::String& logString) const
-			{
-				return DoLog(logString, true, indent);
-			}
-			size_t LogNoTime(const kxf::String& logString) const
-			{
-				return DoLog(logString, false);
-			}
-
-			template<class ...Args>
-			size_t Log(const kxf::String& format, Args&&... args) const
-			{
-				return DoLog(kxf::Format(format, std::forward<Args>(args)...), true);
-			}
-
-			template<class ...Args>
-			size_t LogIndent(size_t indent, const kxf::String& format, Args&&... args) const
-			{
-				return DoLog(kxf::Format(format, std::forward<Args>(args)...), true, indent);
-			}
-
-			template<class ...Args>
-			size_t LogNoTime(const kxf::String& format, Args&&... args) const
-			{
-				return DoLog(kxf::Format(format, std::forward<Args>(args)...), false);
 			}
 	};
 }

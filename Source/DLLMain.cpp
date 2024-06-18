@@ -8,15 +8,15 @@ BOOL APIENTRY DllMain(HMODULE handle, DWORD event, LPVOID lpReserved)
 		auto& handler = xSE::PreloadHandler::CreateInstance();
 		if (handler.IsNull())
 		{
-			handler.Log("Invalid state of 'PreloadHandler' reported. Terminating process.");
+			kxf::Log::Critical("Invalid state of 'PreloadHandler' reported, terminating process");
 			return FALSE;
 		}
 
 		return handler.OnDLLMain(handle, event) ? TRUE : FALSE;
 	}
-	else if (xSE::PreloadHandler::HasInstance())
+	else if (auto instance = xSE::PreloadHandler::GetInstance())
 	{
-		return xSE::PreloadHandler::GetInstance().OnDLLMain(handle, event) ? TRUE : FALSE;
+		return instance->OnDLLMain(handle, event) ? TRUE : FALSE;
 	}
 	return FALSE;
 }
