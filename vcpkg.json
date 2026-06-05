@@ -1,0 +1,38 @@
+{
+	"dependencies": [
+		{
+			"name": "wxwidgets",
+			"default-features": false,
+			"features": [
+				"fonts",
+				"media",
+				"sound",
+				"webview"
+			]
+		},
+		{
+			"name": "curl",
+			"default-features": false,
+			"features": [
+				"non-http",
+				"http2",
+				"openssl",
+				"websockets"
+			]
+		},
+		"sciter-js",
+		"openssl",
+		"gumbo",
+		"libffi",
+		"lz4",
+		"7zip",
+		"nlohmann-json",
+		"simpleini",
+		"tinyxml2",
+		"xxhash",
+		"uriparser",
+		"scintilla",
+		"lunasvg",
+		"detours"
+	]
+}

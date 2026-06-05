@@ -28,10 +28,15 @@ bld/
 [Ll]og/
 
 [Jj]unk/
+[Bb]uild/*.exe
+[Bb]uild/*.dll
 [Bb]uild/F4SE*
 [Bb]uild/NVSE*
 [Bb]uild/SKSE*
 [Bb]uild/SKSE64*
+
+# VCPkg
+vcpkg_installed/*
 
 Nukem Detours/Solution/*
 
