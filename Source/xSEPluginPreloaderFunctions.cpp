@@ -96,7 +96,7 @@ namespace xSE
 	{
 		std::ranges::fill(g_OriginalFunctions, nullptr);
 
-		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE 
+		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE || xSE_PLATFORM_F4SEVR
 
 		LoadFunc_WinHTTP(WinHttpSetSecureLegacyServersAppCompat);
 		LoadFunc_WinHTTP(DllCanUnloadNow);
@@ -375,7 +375,7 @@ namespace xSE
 
 extern "C"
 {
-	#if xSE_PLATFORM_F4SE || xSE_PLATFORM_SKSE64
+	#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE || xSE_PLATFORM_F4SEVR
 	
 	DefineFunc_WinHTTP(WinHttpSetSecureLegacyServersAppCompat);
 	DefineFunc_WinHTTP(DllCanUnloadNow);

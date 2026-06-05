@@ -167,7 +167,7 @@ namespace xSE
 			std::optional<LoadMethod> m_LoadMethod;
 			PluginPreloader::OnProcessAttach m_OnProcessAttach;
 			PluginPreloader::OnThreadAttach m_OnThreadAttach;
-			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
+			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE || xSE_PLATFORM_F4SEVR
 			PluginPreloader::ImportAddressHook<void*(__cdecl)(void*, void*)> m_ImportAddressHook;
 			#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 			PluginPreloader::ImportAddressHook<char*(__stdcall)()> m_ImportAddressHook;

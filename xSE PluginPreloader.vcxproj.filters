@@ -123,5 +123,8 @@
     <None Include="Exports\SKSE.def">
       <Filter>Resources\Exports</Filter>
     </None>
+    <None Include="Exports\F4SEVR.def">
+      <Filter>Resources\Exports</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -27,6 +27,11 @@
 						LibraryName: api-ms-win-crt-runtime-l1-1-0.dll
 						FunctionName: _initterm_e
 							The function *must* have a signature compatible with 'void*(__cdecl*)(void*, void*)'.
+							
+					### Fallout 4 VR:
+						LibraryName: MSVCR110.dll
+						FunctionName: _initterm_e
+							The function *must* have a signature compatible with 'void*(__cdecl*)(void*, void*)'.
 
 					### Skyrim (Special and Anniversary Edition):
 						LibraryName: api-ms-win-crt-runtime-l1-1-0.dll

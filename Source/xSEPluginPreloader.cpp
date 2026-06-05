@@ -172,7 +172,7 @@ namespace xSE::PluginPreloader
 			}
 
 		public:
-			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
+			#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE || xSE_PLATFORM_F4SEVR
 			static void* __cdecl HookFunc(void* a1, void* a2)
 			{
 				return InvokeHook<void*>(a1, a2);
@@ -226,7 +226,7 @@ namespace xSE
 	}
 	kxf::FSPath PreloadHandler::GetOriginalLibraryDefaultPath() const
 	{
-		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE
+		#if xSE_PLATFORM_SKSE64 || xSE_PLATFORM_F4SE || xSE_PLATFORM_F4SEVR
 		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "WinHTTP.dll";
 		#elif xSE_PLATFORM_SKSE || xSE_PLATFORM_NVSE
 		return kxf::Shell::GetKnownDirectory(kxf::KnownDirectoryID::System) / "WinMM.dll";
