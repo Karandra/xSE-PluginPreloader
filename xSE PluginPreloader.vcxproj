@@ -233,6 +233,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -267,6 +268,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -301,6 +303,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -335,6 +338,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -369,6 +373,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -403,6 +408,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -437,6 +443,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"
@@ -471,6 +478,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>Exports\$(Configuration).def</ModuleDefinitionFile>
       <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>Comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(ProjectDir)Bin\$(Configuration)"

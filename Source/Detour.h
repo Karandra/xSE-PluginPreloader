@@ -4,7 +4,7 @@
 namespace xSE::Detour::Private
 {
 	uintptr_t FunctionIAT(uintptr_t func, const char* libraryName, const char* functionName) noexcept;
-	uintptr_t FunctionFromModule(HMODULE moduleBase, uintptr_t func, uintptr_t offset) noexcept;
+	uintptr_t FunctionFromModule(void* moduleBase, uintptr_t func, uintptr_t offset) noexcept;
 }
 
 namespace xSE::Detour
@@ -16,7 +16,7 @@ namespace xSE::Detour
 	}
 
 	template<class T> requires(std::is_function_v<T>)
-	T FunctionFromModule(HMODULE moduleBase, T func, uintptr_t offset) noexcept
+	T FunctionFromModule(void* moduleBase, T func, uintptr_t offset) noexcept
 	{
 		return reinterpret_cast<T*>(Private::FunctionFromModule(moduleBase, reinterpret_cast<uintptr_t>(func), offset));
 	}

@@ -1,7 +1,7 @@
 #pragma once
 #include "Framework.hpp"
-#include <kxf/Application/GUIApplication.h>
-#include <kxf/Localization/AndroidLocalizationPackage.h>
+#include <kxf/Application/CoreApplication.h>
+#include <kxf/Localization/WindowsLocalizationPackage.h>
 
 namespace xSE
 {
@@ -10,11 +10,11 @@ namespace xSE
 
 namespace xSE
 {
-	class Application: public kxf::RTTI::Implementation<Application, kxf::GUIApplication>
+	class Application final: public kxf::RTTI::Implementation<Application, kxf::CoreApplication>
 	{
 		private:
 			PreloadHandler& m_PreloadHandler;
-			kxf::AndroidLocalizationPackage m_LocalizationPackage;
+			kxf::WindowsLocalizationPackage m_LocalizationPackage;
 			
 		public:
 			Application(PreloadHandler& handler);

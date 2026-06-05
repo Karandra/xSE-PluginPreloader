@@ -1,6 +1,9 @@
 #pragma once
 #include "Framework.hpp"
 
+#include <Windows.h>
+#include <kxf/Win32/UndefMacros.h>
+
 namespace xSE
 {
 	class VectoredExceptionHandler final

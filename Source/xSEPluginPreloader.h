@@ -9,6 +9,9 @@
 #include <kxf/FileSystem/NativeFileSystem.h>
 #include <kxf/Serialization/XML.h>
 
+#include <Windows.h>
+#include <kxf/Win32/UndefMacros.h>
+
 BOOL APIENTRY DllMain(HMODULE, DWORD, LPVOID);
 
 namespace kxf
@@ -74,11 +77,11 @@ namespace xSE::PluginPreloader
 			template<class... Args, class R = std::invoke_result_t<TSignature, Args...>>
 			R CallOriginal(kxf::NtStatus& status, Args&&... arg)
 			{
-				KX_SCOPEDLOG_FUNC;
-				KX_SCOPEDLOG.Info()
-					KX_SCOPEDLOG_VALUE_AS(m_OriginalFunction, reinterpret_cast<void*>(m_OriginalFunction))
-					KX_SCOPEDLOG_VALUE(LibraryName)
-					KX_SCOPEDLOG_VALUE(FunctionName);
+				KXF_SCOPEDLOG_FUNC;
+				KXF_SCOPEDLOG.Info()
+					KXF_SCOPEDLOG_VALUE_AS(m_OriginalFunction, reinterpret_cast<void*>(m_OriginalFunction))
+					KXF_SCOPEDLOG_VALUE(LibraryName)
+					KXF_SCOPEDLOG_VALUE(FunctionName);
 
 				if constexpr(std::is_void_v<R>)
 				{
@@ -86,7 +89,7 @@ namespace xSE::PluginPreloader
 					{
 						std::invoke(m_OriginalFunction, std::forward<Args>(arg)...);
 					});
-					KX_SCOPEDLOG.SetSuccess(status);
+					KXF_SCOPEDLOG.SetSuccess(status);
 				}
 				else
 				{
@@ -96,7 +99,7 @@ namespace xSE::PluginPreloader
 						result = std::invoke(m_OriginalFunction, std::forward<Args>(arg)...);
 					});
 
-					KX_SCOPEDLOG.LogReturn(result, status.IsSuccess());
+					KXF_SCOPEDLOG.LogReturn(result, status.IsSuccess());
 					return result;
 				}
 			}

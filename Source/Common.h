@@ -3,11 +3,11 @@
 
 namespace xSE::LogCategory
 {
-	KX_DefineLogCategory(xSE);
-	KX_DefineLogCategory(ScriptExtender);
+	kxf_DefineLogCategory(xSE);
+	kxf_DefineLogCategory(ScriptExtender);
 
-	KX_DefineLogCategory(Environment);
-	KX_DefineLogCategory(ImportAddressHook);
-	KX_DefineLogCategory(CurrentModule);
-	KX_DefineLogCategory(HostProcess);
+	kxf_DefineLogCategory(Environment);
+	kxf_DefineLogCategory(ImportAddressHook);
+	kxf_DefineLogCategory(CurrentModule);
+	kxf_DefineLogCategory(HostProcess);
 }

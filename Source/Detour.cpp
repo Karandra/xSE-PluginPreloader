@@ -1,5 +1,6 @@
 #include "pch.hpp"
 #include "Detour.h"
+#include <Windows.h>
 
 #include "Nukem Detours/Detours.h"
 #if _WIN64
@@ -25,7 +26,7 @@ namespace xSE::Detour::Private
 		uintptr_t base = reinterpret_cast<uintptr_t>(::GetModuleHandleW(nullptr));
 		return NukemDetoursBase::IATHook(base, libraryName, functionName, func);
 	}
-	uintptr_t FunctionFromModule(HMODULE moduleBase, uintptr_t func, uintptr_t offset) noexcept
+	uintptr_t FunctionFromModule(void* moduleBase, uintptr_t func, uintptr_t offset) noexcept
 	{
 		return NukemDetours::DetourFunction(reinterpret_cast<uintptr_t>(moduleBase) + offset, func);
 	}
