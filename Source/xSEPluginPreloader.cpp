@@ -209,7 +209,7 @@ namespace xSE
 	}
 	kxf::Version PreloadHandler::GetLibraryVersion()
 	{
-		return "0.3";
+		return "0.3.0.1";
 	}
 	PreloadHandler *PreloadHandler::GetInstance() noexcept
 	{
@@ -707,7 +707,7 @@ namespace xSE
 	}
 	kxf::ExecutableVersionResource PreloadHandler::LogScriptExtenderInfo(const kxf::ExecutableVersionResource& hostResourceInfo) const
 	{
-		const kxf::FSPath loaderPath = m_InstallFS.ResolvePath(xSE_FOLDER_NAME_W "_Loader.exe");
+		const kxf::FSPath loaderPath = m_InstallFS.ResolvePath(xSE_BINARY_NAME_W "_Loader.exe");
 		kxf::Log::InfoCategory(LogCategory::ScriptExtender, "Platform: {}", xSE_NAME_W);
 		kxf::Log::InfoCategory(LogCategory::ScriptExtender, "Loader: '{}'", loaderPath.GetFullPath());
 		if (!m_InstallFS.GetItem(loaderPath))
@@ -737,7 +737,7 @@ namespace xSE
 			versionString.Replace('.', '_');
 			return versionString;
 		}();
-		auto libraryPath = m_InstallFS.ResolvePath(kxf::Format("{}_{}.dll", xSE_FOLDER_NAME_W, versionString));
+		auto libraryPath = m_InstallFS.ResolvePath(kxf::Format("{}_{}.dll", xSE_BINARY_NAME_W, versionString));
 		kxf::Log::InfoCategory(LogCategory::ScriptExtender, "Library: '{}'", libraryPath.GetFullPath());
 		if (!m_InstallFS.GetItem(libraryPath))
 		{

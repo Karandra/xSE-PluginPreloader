@@ -1,5 +1,8 @@
 *Dates in DD.MM.YYYY*
 
+# Version 0.3.0.1, 06.06.2026
+- Added Fallout 4 VR configuration.
+
 # Version 0.3, 18.06.2024
 - Added xSE library loading detection.
 - Added xSE-PluginPreload initialization method.

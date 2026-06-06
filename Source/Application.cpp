@@ -10,6 +10,7 @@ namespace xSE
 		:m_PreloadHandler(handler)
 	{
 		ICoreApplication::SetInstance(this);
+		kxf::ScopedLoggerGlobalContext::GetInstance().LogAsserts(false);
 	}
 	Application::~Application()
 	{
