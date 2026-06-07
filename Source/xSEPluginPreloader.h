@@ -63,6 +63,7 @@ namespace xSE::PluginPreloader
 	{
 		private:
 			TSignature* m_OriginalFunction = nullptr;
+			size_t m_CallCount = 0;
 
 		public:
 			kxf::String LibraryName;
@@ -80,6 +81,7 @@ namespace xSE::PluginPreloader
 				KXF_SCOPEDLOG_FUNC;
 				KXF_SCOPEDLOG.Info()
 					KXF_SCOPEDLOG_VALUE_AS(m_OriginalFunction, reinterpret_cast<void*>(m_OriginalFunction))
+					KXF_SCOPEDLOG_VALUE(m_CallCount)
 					KXF_SCOPEDLOG_VALUE(LibraryName)
 					KXF_SCOPEDLOG_VALUE(FunctionName);
 
@@ -89,6 +91,8 @@ namespace xSE::PluginPreloader
 					{
 						std::invoke(m_OriginalFunction, std::forward<Args>(arg)...);
 					});
+					m_CallCount++;
+
 					KXF_SCOPEDLOG.SetSuccess(status);
 				}
 				else
@@ -98,6 +102,7 @@ namespace xSE::PluginPreloader
 					{
 						result = std::invoke(m_OriginalFunction, std::forward<Args>(arg)...);
 					});
+					m_CallCount++;
 
 					KXF_SCOPEDLOG.LogReturn(result, status.IsSuccess());
 					return result;
@@ -148,6 +153,7 @@ namespace xSE
 			kxf::DynamicLibrary m_OriginalLibrary;
 			std::vector<kxf::DynamicLibrary> m_LoadedLibraries;
 			VectoredExceptionHandler m_VectoredExceptionHandler;
+			size_t m_VectoredExceptionCounter = 0;
 
 			kxf::FSPath m_ExecutablePath;
 			bool m_PluginsLoaded = false;

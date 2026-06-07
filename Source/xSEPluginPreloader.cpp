@@ -25,6 +25,7 @@ namespace
 {
 	std::unique_ptr<xSE::PreloadHandler> g_Instance;
 
+	constexpr bool g_ThreadedLog = false;
 	constexpr auto g_ConfigFileName = "xSE PluginPreloader.xml";
 	constexpr auto g_LogFileName = "xSE PluginPreloader.log";
 
@@ -536,9 +537,14 @@ namespace xSE
 		{
 			m_VectoredExceptionHandler.Install([](_EXCEPTION_POINTERS* exceptionInfo) -> LONG
 			{
-				if (g_Instance && exceptionInfo)
+				if (g_Instance)
 				{
-					return g_Instance->OnVectoredException(*exceptionInfo);
+					g_Instance->m_VectoredExceptionCounter++;
+
+					if (exceptionInfo)
+					{
+						return g_Instance->OnVectoredException(*exceptionInfo);
+					}
 				}
 				return EXCEPTION_CONTINUE_SEARCH;
 			}, VectoredExceptionHandler::Mode::ExceptionHandler, VectoredExceptionHandler::Order::First);
@@ -554,7 +560,11 @@ namespace xSE
 	}
 	void PreloadHandler::RemoveVectoredExceptionHandler()
 	{
-		kxf::Log::Info("Removing vectored exception handler: {}", m_VectoredExceptionHandler.Remove() ? "success" : "failed (not installed or already removed)");
+		kxf::Log::Info("Removing vectored exception handler: {}, exceptions encountered: {}",
+					   m_VectoredExceptionHandler.Remove() ? "success" : "failed (not installed or already removed)", 
+					   m_VectoredExceptionCounter
+		);
+		m_VectoredExceptionCounter = 0;
 	}
 	uint32_t PreloadHandler::OnVectoredContinue(const _EXCEPTION_POINTERS& exceptionInfo)
 	{
@@ -578,8 +588,8 @@ namespace xSE
 
 		const auto& context = exceptionInfo.ContextRecord;
 		#if _WIN64
-		result.Format("ContextRecord: [RAX: {:#016x}], [RBX: {:#016x}], [RCX: {:#016x}], [RDX: {:#016x}], [RBP: {:#016x}], [RDI: {:#016x}], [RIP: {:#016x}], "
-					  "[R08: {:#016x}], [R09: {:#016x}], [R10: {:#016x}], [R11: {:#016x}], [R12: {:#016x}], [R13: {:#016x}], [R14: {:#016x}], [R15: {:#016x}].\n",
+		result.Format("\nContextRecord:\n\t[RAX: {:#016x}],\n\t[RBX: {:#016x}],\n\t[RCX: {:#016x}],\n\t[RDX: {:#016x}],\n\t[RBP: {:#016x}],\n\t[RDI: {:#016x}],\n\t[RIP: {:#016x}],\n\t"
+					  "[R08: {:#016x}],\n\t[R09: {:#016x}],\n\t[R10: {:#016x}],\n\t[R11: {:#016x}],\n\t[R12: {:#016x}],\n\t[R13: {:#016x}],\n\t[R14: {:#016x}],\n\t[R15: {:#016x}].\n",
 					  context->Rax,
 					  context->Rbx,
 					  context->Rcx,
@@ -596,7 +606,7 @@ namespace xSE
 					  context->R14,
 					  context->R15);
 		#else
-		result.Format("ContextRecord: [EAX: {:#08x}], [EBX: {:#08x}], [ECX: {:#08x}], [EDX: {:#08x}], [EBP: {:#08x}], [EDI: {:#08x}], [EIP: {:#08x}].\n",
+		result.Format("\nContextRecord:\n\t[EAX: {:#08x}],\n\t[EBX: {:#08x}],\n\t[ECX: {:#08x}],\n\t[EDX: {:#08x}],\n\t[EBP: {:#08x}],\n\t[EDI: {:#08x}],\n\t[EIP: {:#08x}].\n",
 					  context->Eax,
 					  context->Ebx,
 					  context->Ecx,
@@ -618,12 +628,12 @@ namespace xSE
 
 			return exceptionCodeMessage;
 		};
-		result.Format("ExceptionRecord:\n\tExceptionCode: [NtStatus: ({:#08x}) '{}']\n\tExceptionFlags: {:#08x}\n\tExceptionAddress: {:{}#0x}\n\tExceptionRecord: {:{}#0x}",
+		result.Format("ExceptionRecord:\n\tExceptionCode: [NtStatus: ({:#08x}) '{}']\n\tExceptionFlags: {:#08x}\n\tExceptionAddress: {:#0{}x}\n\tExceptionRecord: {:#0{}x}",
 					  exception->ExceptionCode,
 					  GetExceptionMessage(exception->ExceptionCode),
 					  exception->ExceptionFlags,
-					  reinterpret_cast<size_t>(exception->ExceptionAddress), sizeof(void*),
-					  reinterpret_cast<size_t>(exception->ExceptionRecord), sizeof(void*)
+					  reinterpret_cast<uintptr_t>(exception->ExceptionAddress), (sizeof(void*) * 2),
+					  reinterpret_cast<uintptr_t>(exception->ExceptionRecord), (sizeof(void*) * 2)
 		);
 
 		return result;
@@ -935,6 +945,11 @@ namespace xSE
 		m_ExecutablePath = kxf::DynamicLibrary::GetExecutingModule().GetFilePath();
 
 		// Open log
+		if (g_ThreadedLog)
+		{
+			kxf::ScopedLoggerGlobalContext::Initialize(std::make_shared<kxf::ScopedLoggerThreadedContext>(kxf::RTTI::assume_non_owned(m_ConfigFS), GetLibraryName()));
+		}
+		else
 		{
 			using namespace kxf;
 
